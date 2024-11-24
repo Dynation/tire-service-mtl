@@ -1,0 +1,42 @@
+/* src/app/components/Footer.module.css */
+
+/* Стили для футера */
+.footer {
+    background-color: #1f2937; /* bg-gray-900 */
+    color: #ffffff; /* text-white */
+    padding-top: 1rem; /* py-4 */
+    padding-bottom: 1rem;
+    text-align: center; /* text-center */
+  }
+  
+  /* Контейнер */
+  .container {
+    margin-left: auto; /* mx-auto */
+    margin-right: auto;
+  }
+  
+  /* Ссылки в футере */
+  .footerLinks {
+    margin-bottom: 0.5rem; /* mb-2 */
+    display: flex;
+    justify-content: center;
+    gap: 1rem; /* space-x-4 */
+  }
+  
+  /* Стили для ссылок */
+  .link {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  .link:hover {
+    color: #9ca3af; /* hover:text-gray-400 */
+  }
+  
+  /* Текст копирайта */
+  .copyText {
+    font-size: 0.875rem; /* text-sm */
+    color: #9ca3af; /* text-gray-400 */
+  }
+
+  
