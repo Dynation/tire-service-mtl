@@ -2,7 +2,7 @@
 
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+//import { useRouter } from "next/navigation";
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -17,7 +17,7 @@ import WheelIcon from "../../../public/images/wheel.svg";
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
+  //const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
