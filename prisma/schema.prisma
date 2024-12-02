@@ -13,18 +13,25 @@ model User {
   email        String        @unique
   appointments Appointment[]
 }
-
 model Appointment {
-  id         Int               @id @default(autoincrement())
-  userId     Int
-  dateTime   DateTime
-  type       ServiceType
-  status     AppointmentStatus @default(PENDING)
-  notes      String?
-  user       User              @relation(fields: [userId], references: [id])
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  dateTime     DateTime
+  type         ServiceType
+  status       AppointmentStatus @default(PENDING)
+  notes        String?
+  vehicleType  VehicleType // Новое поле для типа транспортного средства
+  user         User        @relation(fields: [userId], references: [id])
 
   @@unique([userId, dateTime])
 }
+
+enum VehicleType {
+  SMALL_CAR
+  SUV
+  TRUCK
+}
+
 
 enum ServiceType {
   TIRE

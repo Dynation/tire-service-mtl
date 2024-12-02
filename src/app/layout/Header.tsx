@@ -12,6 +12,8 @@ import {
 } from "firebase/auth";
 import auth from "../lib/firebaseAuth";
 import styles from "./Header.module.css";
+import WheelIcon from "../../../public/images/wheel.svg";
+
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -44,14 +46,11 @@ const Header: React.FC = () => {
   return (
     <header className={styles.header}>
       <div className={styles.wrapper}>
-        <svg
+        <div
           className={styles.wheel}
-          viewBox="-51.2 -51.2 614.40 614.40"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="#000000"
         >
-          {/* ... содержимое SVG ... */}
-        </svg>
+        <WheelIcon />
+        </div>
         <svg className={styles.titleSvg}>
           <text x="50%" y="30%" textAnchor="middle">
             <tspan x="50%" dy="0.1em">TIRE</tspan>

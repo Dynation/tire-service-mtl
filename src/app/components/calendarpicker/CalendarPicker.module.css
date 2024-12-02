@@ -1,0 +1,59 @@
+/* CalendarPicker.module.css */
+.calendarContainer {
+  position: relative;
+  padding: 1rem;
+}
+
+/* Секция для списка доступных слотов времени */
+.timeSlotsSection {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+/* Заголовок секции */
+.sectionTitle {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Сетка для временных слотов */
+.timeSlotsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+/* Базовый стиль для каждого временного слота */
+.timeSlot {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Доступный слот времени */
+.available {
+  background-color: #e6fffa;
+  color: #234e52;
+}
+
+/* Занятый слот времени */
+.occupied {
+  background-color: #fed7d7;
+  color: #822727;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* Ховер эффект для доступных слотов */
+.timeSlot:hover:not(.occupied) {
+  background-color: #b2f5ea;
+}
+
+  
