@@ -3,7 +3,7 @@
 import React, { useState, useContext } from "react";
 import CalendarPicker, { VehicleType } from "../components/calendarpicker/calendarPicker";
 import styles from "./AppointmentPage.module.css";
-import AuthContext from "../context/AuthContext"; // Путь к контексту авторизации
+import AuthContext from "../../app/context/AuthContext"; // Путь к контексту авторизации
 
 const AppointmentPage: React.FC = () => {
   const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
@@ -76,14 +76,23 @@ const AppointmentPage: React.FC = () => {
               vehicleType={vehicleType}
             />
           </div>
-          
-          {/* Временные Слоты */}
+
+          {/* Временные Слоты и Информация о Бронировании */}
           <div className={styles.slotsSection}>
             {selectedDate ? (
               <>
                 <h3>Available Appointments on {selectedDate}</h3>
                 <div className={styles.selectedTime}>
-                  {selectedTime ? `Selected Time: ${selectedTime}` : "Please select a time slot"}
+                  {selectedTime ? (
+                    <div className={styles.appointmentDetails}>
+                      <p><strong>Name:</strong> {isAuthenticated ? user?.name : "Guest"}</p>
+                      <p><strong>Vehicle Type:</strong> {vehicleType}</p>
+                      <p><strong>Date:</strong> {selectedDate}</p>
+                      <p><strong>Time:</strong> {selectedTime}</p>
+                    </div>
+                  ) : (
+                    "Please select a time slot"
+                  )}
                 </div>
               </>
             ) : (
@@ -97,3 +106,4 @@ const AppointmentPage: React.FC = () => {
 };
 
 export default AppointmentPage;
+
