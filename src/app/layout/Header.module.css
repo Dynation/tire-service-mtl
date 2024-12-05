@@ -16,7 +16,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(#0c2768, #2D6CFF);
+  background: linear-gradient(15deg,#91adee27 25%, #03060ec0, #010513e7, #91adee27);
   overflow: hidden;
 }
 
@@ -30,17 +30,21 @@
 
 .titleSvg text {
   animation: stroke 3s;
-  stroke-width: 2;
+  stroke-width: 1;
   stroke: #F8FBC8;
-  font-size: 75px;
+  font-size: 55px;
 }
 
 /* Локальные стили для wheel */
 .wheel {
+  
+  stroke: #efff14;
   position: absolute;
-  left: 10%;
-  width: 150px;
-  height: 150px;
+  left: 5%;
+  top:30%;
+  width: 140px;
+  height: 140px;
+  transform-origin: center;
   animation: rotate 5s ease-in-out;
 }
 
@@ -81,44 +85,133 @@
 }
 
 /* Стили для headerUnderline */
-.headerUnderline {
+
+.headerUnderline1 {
   position: absolute;
-  z-index: 1;
-  top: 121px;
+  z-index: 20;
+  top: 155px;
   width: 100%;
-  height: 80px;
+  height: 60px;
+  background: linear-gradient(#0c2768, #2D6CFF);
+  clip-path: polygon(
+  0% 100%,    /* Ліва нижня точка */
+  5% 97%,     /* Нахилений лівий нижній край */
+  10% 94%, 
+  15% 91%, 
+  20% 88%, 
+  25% 85%, 
+  30% 82%, 
+  35% 79%, 
+  40% 76%, 
+  45% 73%, 
+  50% 70%, 
+  55% 67%, 
+  60% 64%, 
+  65% 61%, 
+  70% 58%, 
+  75% 55%, 
+  80% 52%, 
+  85% 49%, 
+  90% 46%, 
+  95% 43%, 
+  100% 40%,  /* Права нижня точка */
+  100% 0%,    /* Права верхня точка */
+  95% 3%,     /* Нахилений правий верхній край */
+  90% 6%, 
+  85% 9%, 
+  80% 12%, 
+  75% 15%, 
+  70% 18%, 
+  65% 21%, 
+  60% 24%, 
+  55% 27%, 
+  50% 30%, 
+  45% 33%, 
+  40% 36%, 
+  35% 39%, 
+  30% 42%, 
+  25% 45%, 
+  20% 48%, 
+  15% 51%, 
+  10% 54%, 
+  5% 57%, 
+  0% 60%    /* Ліва верхня точка */
+);
+
+  
+
+}
+
+.headerUnderline2 {
+  position: absolute;
+  z-index: 20;
+  top: 175px;
+  width: 100%;
+  height: 60px;
   background-color: yellow;
   clip-path: polygon(
-    100% 100%,
-    0% 100%,
-    0% 83.42%,
-    5% 81.12%,
-    10% 78.72%,
-    15% 76.22%,
-    20% 73.63%,
-    25% 70.96%,
-    30% 68.23%,
-    35% 65.43%,
-    40% 62.59%,
-    45% 59.71%,
-    50% 56.81%,
-    55% 53.90%,
-    60% 50.98%,
-    65% 48.07%,
-    70% 45.19%,
-    75% 42.34%,
-    80% 39.53%,
-    85% 36.78%,
-    90% 34.10%,
-    95% 31.49%,
-    100% 28.97%
-  );
+  0% 100%,    /* Ліва нижня точка */
+  5% 97%,     /* Нахилений лівий нижній край */
+  10% 94%, 
+  15% 91%, 
+  20% 88%, 
+  25% 85%, 
+  30% 82%, 
+  35% 79%, 
+  40% 76%, 
+  45% 73%, 
+  50% 70%, 
+  55% 67%, 
+  60% 64%, 
+  65% 61%, 
+  70% 58%, 
+  75% 55%, 
+  80% 52%, 
+  85% 49%, 
+  90% 46%, 
+  95% 43%, 
+  100% 40%,  /* Права нижня точка */
+  100% 0%,    /* Права верхня точка */
+  95% 3%,     /* Нахилений правий верхній край */
+  90% 6%, 
+  85% 9%, 
+  80% 12%, 
+  75% 15%, 
+  70% 18%, 
+  65% 21%, 
+  60% 24%, 
+  55% 27%, 
+  50% 30%, 
+  45% 33%, 
+  40% 36%, 
+  35% 39%, 
+  30% 42%, 
+  25% 45%, 
+  20% 48%, 
+  15% 51%, 
+  10% 54%, 
+  5% 57%, 
+  0% 60%    /* Ліва верхня точка */
+);
+
 }
 
 /* Адаптивность для малых экранов */
 @media (max-width: 678px) {
   .titleSvg text {
-    font-size: 45px;
+    font-size: 25px;
+  }
+
+  .wheel {
+   
+    stroke: #F8FBC8;
+    position: absolute;
+    left: 5%;
+    top:30%;
+    width: 110px;
+    height: 110px;
+    transform-origin: center;
+    animation: rotate 5s ease-in-out;
   }
 }
 
@@ -157,3 +250,15 @@
 }
 
 /* Остальные стили... */
+@media (prefers-color-scheme: dark) {
+  .wheel {
+    fill: white; /* Цвет для темной темы */
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .wheel {
+    fill: black;
+    stroke: black; /* Цвет для темной темы */
+  }
+}

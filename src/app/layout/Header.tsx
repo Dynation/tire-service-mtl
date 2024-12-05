@@ -1,5 +1,3 @@
-// src/app/components/Header.tsx
-
 "use client";
 import React, { useEffect, useState } from "react";
 //import { useRouter } from "next/navigation";
@@ -14,11 +12,10 @@ import auth from "../lib/firebaseAuth";
 import styles from "./Header.module.css";
 import WheelIcon from "../../../public/images/wheel.svg";
 
-
 const Header: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
+  
   //const router = useRouter();
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -26,6 +23,37 @@ const Header: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // useEffect для отслеживания размера окна и изменения атрибутов SVG
+  useEffect(() => {
+    const handleResize = () => {
+      const svgText = document.querySelector('.titleSvg text');
+      if (svgText) {
+        const tspans = svgText.querySelectorAll('tspan');
+        if (window.innerWidth < 600) {
+          // Для малых экранов (мобильных)
+          tspans[0].setAttribute('x', '40%');
+          tspans[0].setAttribute('dy', '1.5em');
+          tspans[1].setAttribute('x', '50%');
+          tspans[1].setAttribute('dy', '1em');
+        } else {
+          // Для больших экранов
+          tspans[0].setAttribute('x', '50%');
+          tspans[0].setAttribute('dy', '0.8em');
+          tspans[1].setAttribute('x', '50%');
+          tspans[1].setAttribute('dy', '1em');
+        }
+      }
+    };
+
+    // Добавляем обработчик события при изменении размера окна
+    window.addEventListener('resize', handleResize);
+    // Вызовем обработчик сразу, чтобы адаптировать атрибуты при первой загрузке
+    handleResize();
+
+    // Убираем обработчик при размонтировании компонента
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const handleSignIn = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -42,25 +70,22 @@ const Header: React.FC = () => {
       console.error("Ошибка выхода:", error);
     }
   };
-
+  
   return (
     <header className={styles.header}>
       <div className={styles.wrapper}>
-        <div
-          className={styles.wheel}
-        >
-        <WheelIcon />
+        <div>
+          <WheelIcon className={styles.wheel} />
         </div>
-        <svg className={styles.titleSvg}>
+        <svg className={`${styles.titleSvg} titleSvg`}>
           <text x="50%" y="30%" textAnchor="middle">
-            <tspan x="50%" dy="0.1em">TIRE</tspan>
-            <tspan x="50%" dy="1em">SERVICE</tspan>
-            <tspan x="50%" dy="1em">MTL</tspan>
+            <tspan x="40%" dy="1.5em">TIRE</tspan>
+            <tspan x="50%" dy="1em">SERVICE MTL</tspan>
           </text>
         </svg>
       </div>
-
-      <div className={styles.headerUnderline} />
+      <div className={styles.headerUnderline1} />
+      <div className={styles.headerUnderline2} />
 
       {/* Кнопка авторизации/выхода */}
       <div className={styles.authButton}>
