@@ -13,6 +13,7 @@ model User {
   email        String        @unique
   appointments Appointment[]
 }
+
 model Appointment {
   id           Int           @id @default(autoincrement())
   userId       Int
@@ -20,11 +21,27 @@ model Appointment {
   type         ServiceType
   status       AppointmentStatus @default(PENDING)
   notes        String?
-  vehicleType  VehicleType // Новое поле для типа транспортного средства
+  vehicleType  VehicleType // Тип транспортного засобу
   user         User        @relation(fields: [userId], references: [id])
+  serviceId    Int?        // ID обраної послуги
+  service      Service?    @relation(fields: [serviceId], references: [id]) // Відношення до Service
 
   @@unique([userId, dateTime])
 }
+
+model Service {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String
+  price       Float
+  vehicleType VehicleType?
+  appointments Appointment[]
+
+  @@unique([name, price]) // Унікальне обмеження
+}
+
+
+
 
 enum VehicleType {
   SMALL_CAR
@@ -32,10 +49,9 @@ enum VehicleType {
   TRUCK
 }
 
-
 enum ServiceType {
   TIRE
-  WASH
+  REPAIR
 }
 
 enum AppointmentStatus {

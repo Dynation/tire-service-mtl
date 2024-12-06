@@ -1,0 +1,114 @@
+/* Загальний контейнер */
+
+.container {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 200px); /* Забезпечує висоту сторінки, щоб футер не піднімався */
+}
+
+/* Заголовок */
+.title {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+/* Сітка карток */
+.cardContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Картка */
+.card {
+  background-color: #222;
+  color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Заголовок картки */
+.cardTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Опис */
+.cardDescription {
+  font-size: 14px;
+  margin-bottom: 15px;
+  color: #ccc;
+}
+
+/* Ціна */
+.cardPrice {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #f5a623;
+}
+
+/* Тип авто */
+.cardVehicleType {
+  font-size: 14px;
+  color: #fff;
+  background-color: #444;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
+/* Примітки */
+.cardNotes {
+  font-size: 12px;
+  color: #ffa500;
+  margin-top: 10px;
+  background-color: #333;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.notesStar {
+  font-weight: bold;
+  color: #ff6347;
+}
+
+/* Лоадер */
+.loaderContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.loader {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #007bff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+  
