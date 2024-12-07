@@ -1,9 +1,9 @@
-// src/app/components/calendarpicker/CalendarPicker.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
 import styles from "./CalendarPicker.module.css";
 
@@ -34,49 +34,61 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
   const [events, setEvents] = useState<EventInput[]>([]);
   const [timeSlots, setTimeSlots] = useState<Date[]>([]);
 
+  const getAppointmentDuration = (vehicleType: VehicleType): number => {
+    switch (vehicleType) {
+      case "SMALL_CAR":
+        return 45;
+      case "SUV":
+        return 60;
+      case "TRUCK":
+        return 75;
+      default:
+        return 45;
+    }
+  };
+
   useEffect(() => {
-    if (!selectedDate) return;
-
+    if (!selectedDate) {
+      setTimeSlots([]);
+      return;
+    }
+  
     const today = new Date();
-    const selected = new Date(selectedDate);
+    today.setSeconds(0, 0); // Обнуляємо секунди і мілісекунди для точного порівняння
+    const selected = new Date(`${selectedDate}T00:00:00`);
     const slots: Date[] = [];
-
-    // Determine appointment duration based on vehicle type
-    const getAppointmentDuration = (vehicleType: VehicleType) => {
-      switch (vehicleType) {
-        case "SMALL_CAR":
-          return 45; // 45 minutes for small cars
-        case "SUV":
-          return 60; // 60 minutes for SUVs
-        case "TRUCK":
-          return 75; // 75 minutes for trucks
-        default:
-          return 45; // Default to 45 minutes
-      }
-    };
-
     const duration = getAppointmentDuration(vehicleType);
-
-    // Generate time slots from 6:00 to 22:00 with the calculated duration interval
-    for (let hour = 6; hour <= 21; hour++) {
+  
+    const isToday =
+      today.getDate() === selected.getDate() &&
+      today.getMonth() === selected.getMonth() &&
+      today.getFullYear() === selected.getFullYear();
+  
+    console.log("Is Today:", isToday);
+  
+    for (let hour = 6; hour <= 23; hour++) {
       let slotTime = new Date(selected);
       slotTime.setHours(hour, 0, 0, 0);
-
+  
       while (slotTime.getHours() === hour && slotTime.getHours() < 22) {
-        // Add slot to the list only if the slot is not in the past
-        if (slotTime > today) {
+        if (isToday && slotTime <= today) {
+          console.log("Skipping past slot:", slotTime);
+        } else if (slotTime < today) {
+          console.log("Skipping slot for past date:", slotTime);
+        } else {
+          console.log("Adding slot:", slotTime);
           slots.push(new Date(slotTime));
         }
-        // Increase the time by appointment duration
-        slotTime = new Date(slotTime.getTime() + duration * 60000); // duration in minutes
+        slotTime = new Date(slotTime.getTime() + duration * 60000);
       }
     }
-
+  
     setTimeSlots(slots);
   }, [selectedDate, vehicleType]);
+  
+  
 
   useEffect(() => {
-    // Format appointments as events for FullCalendar
     const formattedEvents = appointments.map((appointment) => ({
       title: `${appointment.time} (${appointment.serviceType})`,
       start: `${appointment.date}T${appointment.time}`,
@@ -101,59 +113,50 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
 
   return (
     <div className={styles.calendarContainer}>
-      {/* Календарь */}
       <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin, momentTimezonePlugin]}
+        timeZone="America/Toronto"
+        locale="en"
         initialView="dayGridMonth"
+        initialDate={new Date().toISOString().split("T")[0]}
         events={events}
         dateClick={handleDateClick}
         selectable
       />
-
-      {/* Убедимся, что временные слоты отображаются только один раз под календарем */}
       {selectedDate && (
         <div className={styles.timeSlotsSection}>
-          <h3 className={styles.sectionTitle}>Available Appointments on {selectedDate}</h3>
+          <h3 className={styles.sectionTitle}>
+            Available Appointments on {selectedDate}
+          </h3>
           <div className={styles.timeSlotsGrid}>
             {timeSlots.length === 0 ? (
               <p>No available slots for the selected date.</p>
             ) : (
-              timeSlots.map((time, index) => (
-                <div
-                  key={`${time.toISOString()}-${index}`}
-                  onClick={() => handleTimeClick(time)}
-                  className={`${styles.timeSlot} ${
-                    appointments.some(
-                      (appt) =>
-                        appt.date === selectedDate &&
-                        appt.time === time.toLocaleTimeString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })
-                    )
-                      ? styles.occupied
-                      : styles.available
-                  }`}
-                >
-                  {time.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}{" "}
-                  {appointments.some(
-                    (appt) =>
-                      appt.date === selectedDate &&
-                      appt.time === time.toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })
-                  )
-                    ? "(Occupied)"
-                    : "(Available)"}
-                </div>
-              ))
+              timeSlots.map((time, index) => {
+                const timeString = time.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                });
+
+                const isOccupied = appointments.some(
+                  (appt) =>
+                    appt.date === selectedDate &&
+                    appt.time === timeString
+                );
+
+                return (
+                  <div
+                    key={`${time.toISOString()}-${index}`}
+                    onClick={() => !isOccupied && handleTimeClick(time)}
+                    className={`${styles.timeSlot} ${
+                      isOccupied ? styles.occupied : styles.available
+                    }`}
+                  >
+                    {timeString} {isOccupied ? "(Occupied)" : "(Available)"}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -163,3 +166,4 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
 };
 
 export default CalendarPicker;
+

@@ -7,42 +7,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model
 model User {
   id           Int           @id @default(autoincrement())
-  name         String
-  email        String        @unique
+  name         String        @db.VarChar(50)  // Обмеження до 50 символів
+  email        String        @unique @db.VarChar(100) // Обмеження до 100 символів
   appointments Appointment[]
+  vehicles     Vehicle[]
 }
 
+// Vehicle model
+model Vehicle {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  model       String        @db.VarChar(100)  // Обмеження до 100 символів
+  plateNumber String        @unique @db.VarChar(10) // Обмеження до 10 символів
+  vehicleType VehicleType
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@unique([userId, plateNumber]) // Один користувач не може зареєструвати авто з однаковим номером
+}
+
+// Appointment model
 model Appointment {
   id           Int           @id @default(autoincrement())
   userId       Int
+  vehicleId    Int
   dateTime     DateTime
   type         ServiceType
   status       AppointmentStatus @default(PENDING)
-  notes        String?
-  vehicleType  VehicleType // Тип транспортного засобу
-  user         User        @relation(fields: [userId], references: [id])
-  serviceId    Int?        // ID обраної послуги
-  service      Service?    @relation(fields: [serviceId], references: [id]) // Відношення до Service
+  notes        String?      @db.VarChar(255) // Максимум 255 символів
+  user         User         @relation(fields: [userId], references: [id])
 
-  @@unique([userId, dateTime])
+  @@unique([userId, vehicleId, dateTime]) // Унікальне обмеження для записів
 }
 
+// Service model
 model Service {
-  id          Int           @id @default(autoincrement())
-  name        String
-  description String
-  price       Float
-  vehicleType VehicleType?
-  appointments Appointment[]
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(50)  // Обмеження до 50 символів
+  description  String        @db.VarChar(255) // Обмеження до 255 символів
+  price        Float
+  vehicleType  VehicleType?
 
-  @@unique([name, price]) // Унікальне обмеження
+  @@unique([name, price]) // Назва та ціна послуги мають бути унікальними
 }
 
-
-
-
+// Enums
 enum VehicleType {
   SMALL_CAR
   SUV
@@ -57,7 +68,6 @@ enum ServiceType {
 enum AppointmentStatus {
   PENDING
   CONFIRMED
-  COMPLETED
   CANCELLED
+  COMPLETED
 }
-

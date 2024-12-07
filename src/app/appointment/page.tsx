@@ -61,7 +61,7 @@ const AppointmentPage: React.FC = () => {
           <div className={styles.calendarSection}>
             <h3>Select a Date for Your Appointment</h3>
             <CalendarPicker
-              appointments={[]} // Здесь можно добавить данные о существующих записях
+              appointments={[]} // Передай реальні дані, якщо вони є
               onDateSelect={handleDateSelect}
               selectedDate={selectedDate}
               onTimeSelect={handleTimeSelect}
@@ -96,3 +96,4 @@ const AppointmentPage: React.FC = () => {
 };
 
 export default AppointmentPage;
+
