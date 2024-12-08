@@ -7,7 +7,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --button-background: #e0e0e0;
+  --button-background: #ccc9c9;
   --button-text: #000000;
   --button-shadow: rgba(0, 0, 0, 0.2);
 }
@@ -27,71 +27,14 @@ body {
   @apply bg-[var(--background)] text-[var(--foreground)] font-sans min-h-screen flex flex-col;
 }
 
-/* Parallax Sections */
-.parallaxSection {
-  position: relative;
-  height: 85vh;
-  overflow: hidden;
-  margin-bottom: 50px;
-  @apply md:mb-20;
-}
 
-.parallaxImage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.parallax-inner {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  z-index: 10; /* Текст всегда должен быть поверх изображений */
-  position: relative; /* Слой текста */
-  padding: 20px;
-}
-
-/* Упрощаем стили для h1 и p в parallax */
-.parallax-inner h1 {
-  font-size: 2.5rem;
-  @apply md:text-6xl;
-  margin-bottom: 1rem;
-  color: #ffffff; /* Белый текст для видимости на фоне */
-}
-
-.parallax-inner p {
-  font-size: 1.25rem;
-  @apply md:text-2xl;
-  max-width: 800px;
-  margin: 0 auto;
-  color: #ffffff; /* Белый цвет текста */
-}
 
 /* Main Content Styles */
 .mainContent {
   @apply py-10 flex-grow;
 }
 
-.servicesSection {
-  @apply flex flex-col md:flex-row gap-10 justify-around;
-}
 
-.serviceItem {
-  @apply p-10 text-center cursor-pointer rounded-lg transition-transform duration-300 ease-in-out;
-  background-color: var(--button-background);
-  color: var(--button-text);
-  box-shadow: 0 4px 6px var(--button-shadow);
-}
-
-.serviceItem:hover {
-  @apply scale-105;
-}
 
 /* Headings and Text Styling */
 h3 {
@@ -103,3 +46,8 @@ h1 {
   font-size: 2.5rem;
   text-align: center;
 }
+.swiper-wrapper {
+  transition-timing-function: cubic-bezier(.31,0,.56,.98) !important; /* Плавна інерція */
+}
+
+
