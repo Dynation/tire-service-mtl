@@ -85,6 +85,44 @@
   }
 }
 
+
+/* Навігація для десктопу */
+.navLinks {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.navLinks a {
+  color: #ffffff;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.navLinks a:hover {
+  color: #ffcc00;
+  transform: scale(1.1);
+}
+
+/* Навігація для мобільного меню */
+.mobileNav {
+  background-color: #0e1c41;
+  border-top: 2px solid #ffcc00;
+}
+
+.mobileNav a {
+  color: #ffffff;
+  padding: 0.25rem 0;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.mobileNav a:hover {
+  color: #ffcc00;
+}
+
 /* Стили для headerUnderline */
 
 .headerUnderline1 {
@@ -197,25 +235,6 @@
 
 }
 
-/* Адаптивность для малых экранов */
-@media (max-width: 678px) {
-  .titleSvg text {
-    font-size: 25px;
-  }
-
-  .wheel {
-   
-    stroke: #F8FBC8;
-    position: absolute;
-    left: 5%;
-    top:30%;
-    width: 110px;
-    height: 110px;
-    transform-origin: center;
-    animation: rotate 5s ease-in-out;
-  }
-}
-
 /* Стили для authButton */
 .authButton {
   position: absolute;
@@ -251,6 +270,29 @@
   color: white;
   font-weight: bold;
 }
+
+/* Адаптивность для малых экранов */
+@media (max-width: 678px) {
+  .titleSvg text {
+    font-size: 25px;
+  }
+
+  .wheel {
+   
+    stroke: #F8FBC8;
+    position: absolute;
+    left: 5%;
+    top:30%;
+    width: 110px;
+    height: 110px;
+    transform-origin: center;
+    animation: rotate 5s ease-in-out;
+  }
+}
+
+
+
+
 
 /* Остальные стили... */
 @media (prefers-color-scheme: dark) {

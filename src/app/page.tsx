@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -47,70 +47,81 @@ const HomePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative">
-      {/* Burger Menu */}
-      <nav className="bg-gray-800 text-white p-4 flex justify-between items-center">
-        <div className="font-bold">TireServiceMTL</div>
-        <div className="space-x-4">
-          <Link href="/user-cabinet">User Cabinet</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/appointment">Schedule</Link>
-          <Link href="/about">About Us</Link>
-        </div>
-      </nav>
-
+    <div className=" grid grid-rows-[auto_1fr] ">
       {/* Form for Vehicle and Tire Details */}
       <section className="instructionsSection bg-gray-100 p-10 text-center">
-        <h2 className="text-3xl font-bold mb-6">Provide Your Details</h2>
-        {user ? (
-          <form className="mt-6 bg-white shadow-md rounded p-6">
-            <div className="mb-4">
-              <label htmlFor="licensePlate" className="block text-lg font-bold mb-2">
-                Your Vehicle License Plate
+  <h2 className="text-3xl font-bold mb-6">Provide Your Details</h2>
+  {user ? (
+    <form className="mt-4 bg-[#222] text-white rounded-lg p-6 shadow-lg transition-transform duration-200 ease">
+      <div className="mb-4">
+        <label htmlFor="licensePlate" className="block text-lg font-bold mb-2">
+          Your Vehicle License Plate
+        </label>
+        <input
+          id="licensePlate"
+          type="text"
+          value={licensePlate}
+          onChange={(e) => setLicensePlate(e.target.value)}
+          className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white placeholder-gray-400"
+          placeholder="Enter license plate"
+          required
+        />
+      </div>
+
+      <div className="mb-4">
+        <h3 className="text-lg font-bold mb-2">Select Wheel Size</h3>
+        <ul className="space-y-2">
+          {tireData.map((tire) => (
+            <li key={tire.name}>
+              <label className="flex items-center space-x-3">
+                <input
+                  type="radio"
+                  name="tireSize"
+                  value={tire.name}
+                  checked={selectedTireType === tire.name}
+                  onChange={() => setSelectedTireType(tire.name)}
+                  required
+                />
+                <span>{tire.name}</span>
               </label>
-              <input
-                id="licensePlate"
-                type="text"
-                value={licensePlate}
-                onChange={(e) => setLicensePlate(e.target.value)}
-                className="w-full border border-gray-300 p-2 rounded"
-                placeholder="Enter license plate"
-                required
-              />
-            </div>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-            <div className="mb-4">
-              <h3 className="text-lg font-bold mb-2">Select Wheel Size</h3>
-              <ul className="space-y-2">
-                {tireData.map((tire) => (
-                  <li key={tire.name}>
-                    <label className="flex items-center space-x-3">
-                      <input
-                        type="radio"
-                        name="tireSize"
-                        value={tire.name}
-                        checked={selectedTireType === tire.name}
-                        onChange={() => setSelectedTireType(tire.name)}
-                        required
-                      />
-                      <span>{tire.name}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </form>
-        ) : (
-          <p className="text-sm text-gray-800 mt-2">Please log in to provide your details.</p>
-        )}
-      </section>
+      <div className="flex gap-4">
+        <button
+          type="button"
+          className="px-6 py-3 bg-green-500 text-white rounded flex-grow hover:bg-green-600 transition-transform transform hover:scale-105"
+          onClick={() => {
+            setLicensePlate("");
+            setSelectedTireType("");
+          }}
+          disabled={!licensePlate || !selectedTireType}
+        >
+          Save & Add Another
+        </button>
 
-     {/* Текст поверх Swiper */}
-<div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+        <button
+          type="submit"
+          className="px-6 py-3 bg-blue-500 text-white rounded flex-grow hover:bg-blue-600 transition-transform transform hover:scale-105"
+          disabled={!licensePlate || !selectedTireType}
+        >
+          Save & Go to Schedule Tire Mounting
+        </button>
+      </div>
+    </form>
+  ) : (
+    <p className="text-sm text-black-500 mt-2">Please log in to provide your details.</p>
+  )}
+</section>
+
+{/* Текст поверх Swiper */}
+<div className="absolute  inset-0 z-10 flex flex-col  translate-y-1/3 items-center justify-center pointer-events-none">
   <AnimatePresence mode="popLayout">
     <motion.h1
       key={`title-${currentSlide}`}
-      className="text-5xl text-white z-20 text-center bg-black/50 px-4 py-2 rounded mb-4"
+      className="text-4xl md:text-5xl text-white z-20 text-center bg-black/50 px-4 py-2 rounded mb-4 "
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
@@ -123,7 +134,7 @@ const HomePage: React.FC = () => {
   <AnimatePresence mode="popLayout">
     <motion.p
       key={`desc-${currentSlide}`}
-      className="text-lg text-white z-20 text-center bg-black/50 px-4 py-2 rounded max-w-2xl"
+      className="text-lg text-white z-20 text-center bg-black/50 px-4 py-2 rounded max-w-2xl "
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 100, opacity: 0 }}
@@ -133,7 +144,6 @@ const HomePage: React.FC = () => {
     </motion.p>
   </AnimatePresence>
 </div>
-
       {/* Swiper Slider Section */}
       <Swiper
         modules={[Autoplay]}
@@ -141,23 +151,23 @@ const HomePage: React.FC = () => {
         speed={1500}
         loop
         onSlideChange={(swiper) => setCurrentSlide(swiper.realIndex)}
-        className="w-full h-[85vh]"
+        className="w-full h-[60vh] md:h-[70vh] lg:h-[75vh]"
         
       >
         <SwiperSlide>
-          <div className="relative w-full h-[50dvh]">
+          <div className="relative w-full h-full">
             <Image src="/images/hero3.jpg" alt="Forests" fill style={{ objectFit: "cover" }} />
           </div>
         </SwiperSlide>
 
         <SwiperSlide>
-          <div className="relative w-full h-[50dvh]">
+          <div className="relative w-full h-full">
             <Image src="/images/hero2.jpg" alt="Beaches" fill style={{ objectFit: "cover" }} />
           </div>
         </SwiperSlide>
 
         <SwiperSlide>
-          <div className="relative w-full h-[50dvh]">
+          <div className="relative w-full h-full">
             <Image src="/images/hero.jpg" alt="Mountains" fill style={{ objectFit: "cover" }} />
           </div>
         </SwiperSlide>

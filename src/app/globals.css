@@ -22,32 +22,17 @@
   }
 }
 
-/* Using Custom Variables in Tailwind */
-body {
-  @apply bg-[var(--background)] text-[var(--foreground)] font-sans min-h-screen flex flex-col;
-}
-
-
-
 /* Main Content Styles */
-.mainContent {
-  @apply py-10 flex-grow;
+body {
+  @apply bg-[var(--background)] text-[var(--foreground)] font-sans flex flex-col;
 }
 
-
-
-/* Headings and Text Styling */
-h3 {
-  margin-top: 20px;
-  font-weight: 600;
-}
-
-h1 {
-  font-size: 2.5rem;
-  text-align: center;
-}
+/* Swiper Wrapper Transition */
 .swiper-wrapper {
-  transition-timing-function: cubic-bezier(.31,0,.56,.98) !important; /* Плавна інерція */
+  transition-timing-function: ease-in-out !important;
 }
 
-
+/* Form Inputs */
+input[type="radio"] {
+  accent-color: #4caf50; /* Зелений колір для радіокнопок */
+}
