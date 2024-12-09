@@ -112,16 +112,22 @@ const HomePage: React.FC = () => {
       </div>
     </form>
   ) : (
-    <p className="text-sm text-black-500 mt-2">Please log in to provide your details.</p>
+    <p
+  className="w-full mt-4 bg-[#333] text-white rounded-lg p-4 shadow-md cursor-pointer hover:bg-[#444] transition-colors"
+>
+  Please log in to provide your details.
+</p>
+
+
   )}
 </section>
 
 {/* Текст поверх Swiper */}
-<div className="absolute  inset-0 z-10 flex flex-col  translate-y-1/3 items-center justify-center pointer-events-none">
+<div className="absolute  inset-0 z-10 flex flex-col  md:translate-y-[30%] translate-y-[40%] items-center justify-center pointer-events-none">
   <AnimatePresence mode="popLayout">
     <motion.h1
       key={`title-${currentSlide}`}
-      className="text-4xl md:text-5xl text-white z-20 text-center bg-black/50 px-4 py-2 rounded mb-4 "
+      className="text-4xl md:text-5xl text-white z-20 text-center bg-black/10 px-4 py-2 rounded mb-4 "
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
@@ -134,7 +140,7 @@ const HomePage: React.FC = () => {
   <AnimatePresence mode="popLayout">
     <motion.p
       key={`desc-${currentSlide}`}
-      className="text-lg text-white z-20 text-center bg-black/50 px-4 py-2 rounded max-w-2xl "
+      className="text-lg text-white z-20 text-center bg-black/10 px-4 py-2 rounded max-w-2xl "
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 100, opacity: 0 }}
