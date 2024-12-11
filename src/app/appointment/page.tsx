@@ -1,14 +1,18 @@
 // src/app/appointment/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
-import CalendarPicker, { VehicleType } from "../../app/components/calendarpicker/calendarPicker";
+import CalendarPicker from "../../app/components/calendarpicker/calendarPicker";
+import { VehicleType } from "../../app/types/VehicleType";
+import VehicleForm from "../../app/components/forms/VehicleForm";
 import styles from "./AppointmentPage.module.css";
 import { useAuth } from "../../app/context/AuthContext";
 
 const AppointmentPage: React.FC = () => {
-  const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
+  const [vehicleType, setVehicleType] = useState<VehicleType>(VehicleType.SMALL_CAR);
+
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const { isAuthenticated, user } = useAuth();
 
@@ -18,14 +22,17 @@ const AppointmentPage: React.FC = () => {
     }
   }, [isAuthenticated, user]);
 
-  const handleVehicleSelect = (type: VehicleType) => {
-    setVehicleType(type);
+ 
+  const handleFormSubmit = (values: { licensePlate: string; tireSize: string; vehicleType: VehicleType }) => {
+    setVehicleType(values.vehicleType);
+    setFormSubmitted(true);
   };
+  
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
   };
-
+  
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     console.log(`Appointment set for: ${selectedDate} at ${time}`);
@@ -38,23 +45,20 @@ const AppointmentPage: React.FC = () => {
           tireserviceMTL
           <span className={styles.titleUnderline} />
         </h1>
-        <h2>
-          {isAuthenticated && user ? `WELCOME ${user.displayName}` : "WELCOME USER"}
-        </h2>
+        <h2>{isAuthenticated && user ? `WELCOME ${user.displayName}` : "WELCOME USER"}</h2>
       </header>
 
-      {!vehicleType ? (
-        <section className={styles.vehicleTypeButtons}>
-          <h3>Select Your Vehicle Type</h3>
-          <button onClick={() => handleVehicleSelect("SMALL_CAR")} className={styles.vehicleTypeButton}>
-            Small Car
-          </button>
-          <button onClick={() => handleVehicleSelect("SUV")} className={styles.vehicleTypeButton}>
-            SUV
-          </button>
-          <button onClick={() => handleVehicleSelect("TRUCK")} className={styles.vehicleTypeButton}>
-            Truck
-          </button>
+      {!formSubmitted ? (
+        <section className={styles.vehicleFormSection}>
+          <h3>Enter Your Vehicle Details</h3>
+          <VehicleForm
+            tireData={[
+              { name: "Шини R14-R15", description: "Шиномонтаж для легкових автомобілів з радіусом R14-R15.", price: 70 },
+              { name: "Шини R16", description: "Шиномонтаж для автомобілів з радіусом R16.", price: 90 },
+              { name: "Шини R17+", description: "Шини преміум-класу або для позашляховиків.", price: 100 },
+            ]}
+            onSubmit={handleFormSubmit}
+          />
         </section>
       ) : (
         <div className={styles.calendarAndSlotsContainer}>

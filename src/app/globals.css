@@ -22,17 +22,14 @@
   }
 }
 
-/* Main Content Styles */
+/* Main Content Styles 
 body {
   @apply bg-[var(--background)] text-[var(--foreground)] font-sans flex flex-col;
 }
-
+*/
 /* Swiper Wrapper Transition */
 .swiper-wrapper {
+
   transition-timing-function: ease-in-out !important;
 }
 
-/* Form Inputs */
-input[type="radio"] {
-  accent-color: #4caf50; /* Зелений колір для радіокнопок */
-}
