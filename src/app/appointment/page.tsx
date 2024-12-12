@@ -9,10 +9,18 @@ import { useAuth } from "../../app/context/AuthContext";
 
 const AppointmentPage: React.FC = () => {
   const [vehicleType, setVehicleType] = useState<VehicleType>(VehicleType.SMALL_CAR);
-
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formValues, setFormValues] = useState<{
+    licensePlate: string;
+    tireSize: string;
+    wheelCount: number;
+    vehicleType: VehicleType;
+    flatRun: boolean;
+    lowProfile: boolean;
+    notes: string;
+  } | null>(null);
 
   const { isAuthenticated, user } = useAuth();
 
@@ -22,20 +30,42 @@ const AppointmentPage: React.FC = () => {
     }
   }, [isAuthenticated, user]);
 
- 
-  const handleFormSubmit = (values: { licensePlate: string; tireSize: string; vehicleType: VehicleType }) => {
+  const handleFormSubmit = (values: {
+    licensePlate: string;
+    tireSize: string;
+    wheelCount: number;
+    vehicleType: VehicleType;
+    flatRun: boolean;
+    lowProfile: boolean;
+    notes: string;
+  }): void => {
     setVehicleType(values.vehicleType);
+    setFormValues(values);
     setFormSubmitted(true);
+    console.log("Form values:", values);
   };
-  
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
   };
-  
+
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     console.log(`Appointment set for: ${selectedDate} at ${time}`);
+  };
+
+  const handleAddAppointment = () => {
+    console.log("Appointment added:", {
+      ...formValues,
+      date: selectedDate,
+      time: selectedTime,
+    });
+  };
+
+  const handleReappoint = () => {
+    setFormSubmitted(false);
+    setSelectedDate(null);
+    setSelectedTime(null);
   };
 
   return (
@@ -79,10 +109,32 @@ const AppointmentPage: React.FC = () => {
                 <div className={styles.selectedTime}>
                   {selectedTime ? (
                     <div className={styles.appointmentDetails}>
+                      <h2 className="text-2xl font-bold mb-4">Check Your Appointment Details</h2>
                       <p><strong>Name:</strong> {user?.displayName || "Guest"}</p>
-                      <p><strong>Vehicle Type:</strong> {vehicleType}</p>
+                      <p><strong>License Plate:</strong> {formValues?.licensePlate}</p>
+                      <p><strong>Tire Size:</strong> {formValues?.tireSize}</p>
+                      <p><strong>Vehicle Type:</strong> {formValues?.vehicleType}</p>
+                      <p><strong>Wheel Count:</strong> {formValues?.wheelCount}</p>
+                      <p><strong>Flat Run:</strong> {formValues?.flatRun ? "Yes" : "No"}</p>
+                      <p><strong>Low Profile:</strong> {formValues?.lowProfile ? "Yes" : "No"}</p>
+                      <p><strong>Notes:</strong> {formValues?.notes}</p>
                       <p><strong>Date:</strong> {selectedDate}</p>
                       <p><strong>Time:</strong> {selectedTime}</p>
+
+                      <div className="flex gap-4 mt-6">
+                        <button
+                          onClick={handleAddAppointment}
+                          className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 transition-transform transform hover:scale-105"
+                        >
+                          Add Appointment
+                        </button>
+                        <button
+                          onClick={handleReappoint}
+                          className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition-transform transform hover:scale-105"
+                        >
+                          Reappoint
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     "Please select a time slot"
@@ -100,4 +152,5 @@ const AppointmentPage: React.FC = () => {
 };
 
 export default AppointmentPage;
+
 
