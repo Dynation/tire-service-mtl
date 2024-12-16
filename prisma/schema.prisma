@@ -49,6 +49,14 @@ model Appointment {
   @@unique([userId, licensePlate, dateTime])
 }
 
+model Service {
+  id        Int     @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
 // Enums
 enum VehicleType {
   SMALL_CAR
