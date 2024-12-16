@@ -7,6 +7,7 @@ import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
 import styles from "./CalendarPicker.module.css";
 
+
 export interface Appointment {
   date: string; // ISO string, e.g., "2024-11-27"
   time: string; // Localized time, e.g., "08:45 AM"
@@ -108,8 +109,10 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
       minute: "2-digit",
       hour12: true,
     });
+    console.log("Selected Time:", formattedTime);
     onTimeSelect(formattedTime);
-  };
+  }; 
+  
 
   return (
     <div className={styles.calendarContainer}>

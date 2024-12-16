@@ -1,5 +1,4 @@
-// src/app/context/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   onAuthStateChanged,
   User,
@@ -25,9 +24,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Подписываемся на изменения авторизации через Firebase
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
+
+     // Створюємо запис користувача в базі даних після авторизації
+if (currentUser) {
+  try {
+    await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uid: currentUser.uid, // Додаємо uid користувача
+        name: currentUser.displayName || "Anonymous",
+        email: currentUser.email,
+      }),
+    });
+  } catch (error) {
+    console.error("Error creating user in database:", error);
+  }
+}
+
     });
     return () => unsubscribe();
   }, []);
@@ -60,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

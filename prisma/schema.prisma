@@ -1,3 +1,5 @@
+// schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,53 +11,42 @@ datasource db {
 
 // User model
 model User {
-  id           Int           @id @default(autoincrement())
-  name         String        @db.VarChar(50)  // Обмеження до 50 символів
-  email        String        @unique @db.VarChar(100) // Обмеження до 100 символів
+  uid          String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  authProvider String        @default("firebase")
   appointments Appointment[]
   vehicles     Vehicle[]
 }
 
 // Vehicle model
 model Vehicle {
-  id          Int           @id @default(autoincrement())
-  userId      Int
-  model       String        @db.VarChar(100)  // Обмеження до 100 символів
-  plateNumber String        @unique @db.VarChar(10) // Обмеження до 10 символів
-  vehicleType VehicleType
-  user        User          @relation(fields: [userId], references: [id])
-
-  @@unique([userId, plateNumber]) // Один користувач не може зареєструвати авто з однаковим номером
+  licensePlate String   @id @db.VarChar(10) // Використання licensePlate як первинного ключа
+  userId       String   // UID користувача
+  model        String   @db.VarChar(100)
+  vehicleType  VehicleType
+  user         User     @relation(fields: [userId], references: [uid])
+  appointments Appointment[]
 }
 
 // Appointment model
 model Appointment {
   id           Int              @id @default(autoincrement())
-  userId       Int
-  vehicleId    Int
+  userId       String           // UID користувача
+  licensePlate String           // Використання licensePlate замість vehicleId
   dateTime     DateTime
   type         ServiceType
-  status       AppointmentStatus  @default(PENDING)
-  notes        String?            @db.VarChar(255)
-  tireSize     String             @db.VarChar(50)  // Нове поле для розміру колеса
-  wheelCount   Int             // Нове поле для кількості коліс
-  flatRun      Boolean            @default(false)  // Нове поле для Flat Run
-  lowProfile   Boolean           @default(false)  // Нове поле для Low Profile
-  user         User              @relation(fields: [userId], references: [id])
+  status       AppointmentStatus @default(PENDING)
+  notes        String?           @db.VarChar(255)
+  tireSize     String
+  wheelCount   Int
+  flatRun      Boolean
+  lowProfile   Boolean
 
-  @@unique([userId, vehicleId, dateTime])
-}
+  user         User              @relation(fields: [userId], references: [uid])
+  vehicle      Vehicle           @relation(fields: [licensePlate], references: [licensePlate])
 
-
-// Service model
-model Service {
-  id           Int           @id @default(autoincrement())
-  name         String        @db.VarChar(50)  // Обмеження до 50 символів
-  description  String        @db.VarChar(255) // Обмеження до 255 символів
-  price        Float
-  vehicleType  VehicleType?
-
-  @@unique([name, price]) // Назва та ціна послуги мають бути унікальними
+  @@unique([userId, licensePlate, dateTime])
 }
 
 // Enums

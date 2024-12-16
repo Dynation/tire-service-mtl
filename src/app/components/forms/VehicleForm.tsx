@@ -10,6 +10,7 @@ interface VehicleFormProps {
   onSubmit: (values: {
     licensePlate: string;
     tireSize: string;
+    model: string;
     wheelCount: number;
     vehicleType: VehicleType;
     flatRun: boolean;
@@ -21,18 +22,21 @@ interface VehicleFormProps {
 const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
   const initialValues = {
     licensePlate: "",
+    model: "", // Додаємо model
     tireSize: "",
-    vehicleType: VehicleType.SMALL_CAR, // Використовуйте значення з enum
+    vehicleType: VehicleType.SMALL_CAR,
     wheelCount: 4,
     flatRun: false,
     lowProfile: false,
     notes: "",
   };
+  
 
   const validationSchema = Yup.object({
     licensePlate: Yup.string()
       .matches(/^[A-Z0-9-]+$/, "Invalid license plate format")
       .required("License plate is required"),
+    model: Yup.string().required("Model is required"), // Валідація для model
     tireSize: Yup.string().required("Please select a tire size"),
     vehicleType: Yup.string().required("Please select a vehicle type"),
     wheelCount: Yup.number()
@@ -41,6 +45,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
       .required("Please select the number of wheels"),
     notes: Yup.string().max(255, "Notes must be 255 characters or less"),
   });
+  
 
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onSubmit}>
@@ -61,6 +66,22 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
             <ErrorMessage name="licensePlate" component="div" className="text-red-500 mt-1" />
           </div>
 
+          {/* Model Field */}
+          <div className="mb-4">
+            <label htmlFor="model" className="block text-lg font-bold mb-2">
+              Vehicle Model
+            </label>
+            <Field
+              id="model"
+              name="model"
+              type="text"
+              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white placeholder-gray-400"
+              placeholder="Enter vehicle model"
+            />
+            <ErrorMessage name="model" component="div" className="text-red-500 mt-1" />
+          </div>
+
+
           {/* Tire Size Selection */}
           <div className="mb-4">
             <h3 className="text-lg font-bold mb-2">Select Wheel Size</h3>
@@ -77,8 +98,42 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
             <ErrorMessage name="tireSize" component="div" className="text-red-500 mt-1" />
           </div>
 
-           {/* Flat Run Checkbox */}
-           <div className="mb-4">
+          {/* Vehicle Type Selection */}
+          <div className="mb-4">
+            <h3 className="text-lg font-bold mb-2">Select Vehicle Type</h3>
+            <div className="space-y-2">
+              {Object.values(VehicleType).map((type) => (
+                <label key={type} className="flex items-center space-x-3">
+                  <Field type="radio" name="vehicleType" value={type} />
+                  <span>{type.replace("_", " ")}</span>
+                </label>
+              ))}
+            </div>
+            <ErrorMessage name="vehicleType" component="div" className="text-red-500 mt-1" />
+          </div>
+
+          {/* Wheel Count Selection */}
+          <div className="mb-4">
+            <label htmlFor="wheelCount" className="block text-lg font-bold mb-2">
+              Number of Wheels
+            </label>
+            <Field
+              as="select"
+              id="wheelCount"
+              name="wheelCount"
+              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white"
+            >
+              {[1, 2, 3, 4, 5, 6].map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </Field>
+            <ErrorMessage name="wheelCount" component="div" className="text-red-500 mt-1" />
+          </div>
+
+          {/* Flat Run Checkbox */}
+          <div className="mb-4">
             <label className="flex items-center space-x-3">
               <Field type="checkbox" name="flatRun" />
               <span>Flat Run</span>
