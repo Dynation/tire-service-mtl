@@ -123,7 +123,8 @@ const AppointmentPage: React.FC = () => {
       if (!response.ok) {
         throw new Error("Failed to add appointment");
       }
-
+      console.log("Appointment successfully added!");
+  
       setSuccessMessage("Your appointment is PENDING. You will receive an email once it's CONFIRMED.");
     } catch (error) {
       console.error("Error adding appointment:", error);

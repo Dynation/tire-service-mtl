@@ -11,9 +11,18 @@ async function getAuthenticatedSession() {
   return session;
 }
 
+// Функція для логування запитів
+function logRequest(req: NextRequest) {
+  console.log("Request received:", {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers),
+  });
+}
+
 // GET: Отримання списку транспортних засобів користувача
 export async function GET(req: NextRequest) {
-  console.log("GET request received:", req.url);
+  logRequest(req);
 
   try {
     const session = await getAuthenticatedSession();
@@ -22,6 +31,7 @@ export async function GET(req: NextRequest) {
       where: { userId: session.uid },
     });
 
+    console.log("Vehicles fetched successfully:", vehicles);
     return NextResponse.json(vehicles);
   } catch (error) {
     console.error("Failed to fetch vehicles:", (error as Error).message);
@@ -34,12 +44,17 @@ export async function GET(req: NextRequest) {
 
 // POST: Додавання нового транспортного засобу
 export async function POST(req: NextRequest) {
-  console.log("POST request received:", req.url);
+  logRequest(req);
 
   try {
     const session = await getAuthenticatedSession();
     const data = await req.json();
     const { licensePlate, model, vehicleType } = data;
+
+    if (!licensePlate || !model || !vehicleType) {
+      console.error("Missing required fields:", { licensePlate, model, vehicleType });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
 
     // Перевірка ліміту на 5 авто
     const vehicleCount = await db.vehicle.count({
@@ -47,6 +62,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (vehicleCount >= 5) {
+      console.warn("Vehicle limit reached for user:", session.uid);
       return NextResponse.json({ error: "Vehicle limit reached (5 vehicles max)" }, { status: 400 });
     }
 
@@ -59,6 +75,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    console.log("Vehicle added successfully:", newVehicle);
     return NextResponse.json(newVehicle, { status: 201 });
   } catch (error) {
     console.error("Failed to add vehicle:", (error as Error).message);
@@ -71,7 +88,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE: Видалення транспортного засобу (якщо немає активних записів)
 export async function DELETE(req: NextRequest) {
-  console.log("DELETE request received:", req.url);
+  logRequest(req);
 
   try {
     const session = await getAuthenticatedSession();
@@ -79,6 +96,7 @@ export async function DELETE(req: NextRequest) {
     const licensePlate = searchParams.get("licensePlate");
 
     if (!licensePlate) {
+      console.error("License plate is required");
       return NextResponse.json({ error: "License plate is required" }, { status: 400 });
     }
 
@@ -92,6 +110,7 @@ export async function DELETE(req: NextRequest) {
     });
 
     if (hasActiveAppointments) {
+      console.warn("Attempt to delete vehicle with active appointments:", licensePlate);
       return NextResponse.json(
         { error: "Cannot delete vehicle with active appointments" },
         { status: 400 }
@@ -102,6 +121,7 @@ export async function DELETE(req: NextRequest) {
       where: { licensePlate },
     });
 
+    console.log("Vehicle deleted successfully:", licensePlate);
     return NextResponse.json({ message: "Vehicle deleted successfully" });
   } catch (error) {
     console.error("Failed to delete vehicle:", (error as Error).message);
