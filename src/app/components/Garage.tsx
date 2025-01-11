@@ -54,4 +54,5 @@ const Garage: React.FC<GarageProps> = ({ vehicles, onDelete, onAdd }) => {
   );
 };
 
+
 export default Garage;

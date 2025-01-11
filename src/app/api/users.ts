@@ -1,7 +1,7 @@
 // 1. API для створення користувача
 // Файл: pages/api/users.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import admin from "../../app/lib/firebaseAuth";
+import { admin }from "../../app/lib/firebaseAdmin"; // Використовуйте Firebase Admin, а не Auth
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const db = admin.firestore();
+    const db = admin.firestore(); // Ініціалізація Firestore
     await db.collection("users").doc(uid).set({ name, email, createdAt: new Date() });
 
     return res.status(200).json({ message: "Користувач створений успішно" });

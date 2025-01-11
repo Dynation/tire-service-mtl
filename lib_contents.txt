@@ -1,0 +1,116 @@
+
+=== src/app/lib/apiUtils.ts ===
+
+import { NextRequest } from "next/server";
+import { verifyServerToken } from "./firebaseAuth";
+
+// Функція для логування запитів
+export function logRequest(req: NextRequest) {
+  console.log("Request received:", {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers),
+  });
+}
+// Функція для отримання сесії та перевірки автентифікації
+export async function getAuthenticatedSession(req: NextRequest) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("Not authenticated");
+  }
+
+  const token = authHeader.split("Bearer ")[1];
+  const session = await verifyServerToken(token);
+
+  if (!session) {
+    throw new Error("Not authenticated");
+  }
+  return session;
+}
+
+export { verifyServerToken };
+=== src/app/lib/firebaseAuth.ts ===
+
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import admin from "./firebaseAdmin"; // Імпорт Firebase Admin SDK
+
+// Конфігурація Firebase для клієнтської сторони
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
+// Ініціалізація клієнтського додатка
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Функція для отримання сесії
+export const getSession = async () => {
+  const user = auth.currentUser;
+
+  if (user) {
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      token: await user.getIdToken(),
+    };
+  } else {
+    throw new Error("Користувач не авторизований");
+  }
+};
+
+// Функція для перевірки токена (серверна сторона)
+export const verifyServerToken = async (token: string) => {
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    return decodedToken;
+  } catch (error) {
+    console.error("Помилка перевірки токена:", error);
+    throw new Error("Недійсний токен");
+  }
+};
+console.log("verifyServerToken is being exported:", verifyServerToken);
+
+export default auth;
+
+=== src/app/lib/firebaseAdmin.ts ===
+
+import * as admin from "firebase-admin";
+import { initializeApp, getApps } from "firebase-admin/app";
+
+// Ініціалізація Firebase Admin SDK
+if (!getApps().length) {
+  // Перевіряємо, чи використовується Base64-ключ або стандартний підхід
+  if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
+    const serviceAccount = JSON.parse(
+      Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, "base64").toString("utf-8")
+    );
+
+    initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+    });
+  } else {
+    initializeApp({
+      credential: admin.credential.applicationDefault(),
+      databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`,
+    });
+  }
+}
+
+export default admin;
+
+=== src/app/lib/db.ts ===
+
+import { PrismaClient } from "@prisma/client";
+
+const db = new PrismaClient();
+
+export default db;

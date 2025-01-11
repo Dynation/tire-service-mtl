@@ -1,8 +1,8 @@
-// Firebase Configuration and Initialization
+// firebaseAuth.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import admin from "firebase-admin";
 
+// Конфігурація Firebase для клієнтської сторони
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,30 +13,24 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Ensure Firebase app is initialized only once
+// Ініціалізація клієнтського додатка
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Initialize Firebase Admin SDK for server-side operations
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
-}
+// Функція для отримання сесії
+export const getSession = async () => {
+  const user = auth.currentUser;
 
-// Function to verify Firebase ID Token on the server
-export async function getSession(token: string) {
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    return decodedToken;
-  } catch (error) {
-    console.error("Error verifying token:", error);
-    return null;
+  if (user) {
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      token: await user.getIdToken(),
+    };
+  } else {
+    throw new Error("Користувач не авторизований");
   }
-}
+};
 
 export default auth;
