@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { authMiddleware } from "./src/midlleware/auth";
 import { loggerMiddleware } from "./src/midlleware/logger";
-import { rateLimitMiddleware } from "./src/midlleware/retaLimit";
+import { rateLimitMiddleware } from "./src/midlleware/rateLimit";
 
 export async function middleware(req: Request) {
   const response = NextResponse.next();

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { verifyServerToken } from "./firebaseAuth";
+import { verifyServerToken } from "./firebaseAdmin";
 
 // Функція для логування запитів
 export function logRequest(req: NextRequest) {

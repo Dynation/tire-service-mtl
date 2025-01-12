@@ -1,5 +1,3 @@
-// src/components/forms/VehicleForm.tsx
-"use client";
 import React from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -7,22 +5,30 @@ import { VehicleType } from "../../types/VehicleType";
 
 interface VehicleFormProps {
   tireData: { name: string; description: string; price: number }[];
-  onSubmit: (values: {
+  onSubmit: (vehicle: {
     licensePlate: string;
-    tireSize: string;
     model: string;
-    wheelCount: number;
+    tireSize: string;
     vehicleType: VehicleType;
+    wheelCount: number;
     flatRun: boolean;
     lowProfile: boolean;
     notes: string;
-  }) => void;
+  }) => void; // Додаємо цей проп
+  onCancel?: () => void;
+  heading?: string;
+  submitButtonLabel?: string;
 }
 
-const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
+const VehicleForm: React.FC<VehicleFormProps> = ({
+  tireData,
+  onCancel,
+  heading = "Add New Vehicle",
+  submitButtonLabel = "Save Vehicle",
+}) => {
   const initialValues = {
     licensePlate: "",
-    model: "", // Додаємо model
+    model: "",
     tireSize: "",
     vehicleType: VehicleType.SMALL_CAR,
     wheelCount: 4,
@@ -30,161 +36,259 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ tireData, onSubmit }) => {
     lowProfile: false,
     notes: "",
   };
-  
 
   const validationSchema = Yup.object({
     licensePlate: Yup.string()
       .matches(/^[A-Z0-9-]+$/, "Invalid license plate format")
       .required("License plate is required"),
-    model: Yup.string().required("Model is required"), // Валідація для model
+    model: Yup.string().required("Model is required"),
     tireSize: Yup.string().required("Please select a tire size"),
     vehicleType: Yup.string().required("Please select a vehicle type"),
     wheelCount: Yup.number()
-      .min(1, "Select at least 1 wheel")
-      .max(6, "Maximum 6 wheels allowed")
-      .required("Please select the number of wheels"),
+      .min(4, "Minimum 4 tires required")
+      .max(18, "Maximum 18 tires allowed")
+      .required("Please select the number of tires"),
     notes: Yup.string().max(255, "Notes must be 255 characters or less"),
   });
-  
+
+  const handleFormSubmit = async (values: typeof initialValues) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("User is not authenticated");
+      }
+
+      const response = await fetch("/api/vehicles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add vehicle");
+      }
+
+      alert("Vehicle added successfully!");
+      if (onCancel) onCancel(); // Закриваємо форму після успіху
+    } catch (error) {
+      console.error("Error adding vehicle:", error);
+      alert((error as Error).message);
+    }
+  };
+
+
 
   return (
-    <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onSubmit}>
-      {({ isSubmitting, resetForm }) => (
-        <Form className="mt-4 bg-[#222] z-50 text-white rounded-lg p-6 shadow-lg transition-transform duration-200 ease">
-          {/* License Plate Field */}
-          <div className="mb-4">
-            <label htmlFor="licensePlate" className="block text-lg font-bold mb-2">
-              Your Vehicle License Plate
-            </label>
-            <Field
-              id="licensePlate"
-              name="licensePlate"
-              type="text"
-              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white placeholder-gray-400"
-              placeholder="Enter license plate"
-            />
-            <ErrorMessage name="licensePlate" component="div" className="text-red-500 mt-1" />
-          </div>
-
-          {/* Model Field */}
-          <div className="mb-4">
-            <label htmlFor="model" className="block text-lg font-bold mb-2">
-              Vehicle Model
-            </label>
-            <Field
-              id="model"
-              name="model"
-              type="text"
-              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white placeholder-gray-400"
-              placeholder="Enter vehicle model"
-            />
-            <ErrorMessage name="model" component="div" className="text-red-500 mt-1" />
-          </div>
-
-
-          {/* Tire Size Selection */}
-          <div className="mb-4">
-            <h3 className="text-lg font-bold mb-2">Select Wheel Size</h3>
-            <ul className="space-y-2">
-              {tireData.map((tire) => (
-                <li key={tire.name}>
-                  <label className="flex items-center space-x-3">
-                    <Field type="radio" name="tireSize" value={tire.name} />
-                    <span>{tire.name}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-            <ErrorMessage name="tireSize" component="div" className="text-red-500 mt-1" />
-          </div>
-
-          {/* Vehicle Type Selection */}
-          <div className="mb-4">
-            <h3 className="text-lg font-bold mb-2">Select Vehicle Type</h3>
-            <div className="space-y-2">
-              {Object.values(VehicleType).map((type) => (
-                <label key={type} className="flex items-center space-x-3">
-                  <Field type="radio" name="vehicleType" value={type} />
-                  <span>{type.replace("_", " ")}</span>
-                </label>
-              ))}
+    <div className="vehicle-form bg-[var(--background)] text-[var(--foreground)] p-6 rounded shadow-md max-w-xl mx-auto">
+      <h2 className="text-2xl font-bold mb-6">{heading}</h2>
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={handleFormSubmit}
+      >
+        {({ isSubmitting }) => (
+          <Form className="space-y-4">
+            {/* License Plate */}
+            <div>
+              <label
+                htmlFor="licensePlate"
+                className="block text-sm font-medium mb-2"
+              >
+                License Plate
+              </label>
+              <Field
+                id="licensePlate"
+                name="licensePlate"
+                type="text"
+                placeholder="Enter license plate"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              />
+              <ErrorMessage
+                name="licensePlate"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
             </div>
-            <ErrorMessage name="vehicleType" component="div" className="text-red-500 mt-1" />
-          </div>
 
-          {/* Wheel Count Selection */}
-          <div className="mb-4">
-            <label htmlFor="wheelCount" className="block text-lg font-bold mb-2">
-              Number of Wheels
-            </label>
-            <Field
-              as="select"
-              id="wheelCount"
-              name="wheelCount"
-              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white"
-            >
-              {[1, 2, 3, 4, 5, 6].map((count) => (
-                <option key={count} value={count}>
-                  {count}
+            {/* Model */}
+            <div>
+              <label htmlFor="model" className="block text-sm font-medium mb-2">
+                Vehicle Model
+              </label>
+              <Field
+                id="model"
+                name="model"
+                type="text"
+                placeholder="Enter model"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              />
+              <ErrorMessage
+                name="model"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
+
+            {/* Tire Size */}
+            <div>
+              <label
+                htmlFor="tireSize"
+                className="block text-sm font-medium mb-2"
+              >
+                Tire Size
+              </label>
+              <Field
+                as="select"
+                id="tireSize"
+                name="tireSize"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              >
+                <option value="" disabled>
+                  Select tire size
                 </option>
-              ))}
-            </Field>
-            <ErrorMessage name="wheelCount" component="div" className="text-red-500 mt-1" />
-          </div>
+                {tireData.map((tire) => (
+                  <option key={tire.name} value={tire.name}>
+                    {tire.name} - {tire.description}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage
+                name="tireSize"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
 
-          {/* Flat Run Checkbox */}
-          <div className="mb-4">
-            <label className="flex items-center space-x-3">
-              <Field type="checkbox" name="flatRun" />
-              <span>Flat Run</span>
-            </label>
-          </div>
+            {/* Vehicle Type */}
+            <div>
+              <label
+                htmlFor="vehicleType"
+                className="block text-sm font-medium mb-2"
+              >
+                Vehicle Type
+              </label>
+              <Field
+                as="select"
+                id="vehicleType"
+                name="vehicleType"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              >
+                {Object.values(VehicleType).map((type) => (
+                  <option key={type} value={type}>
+                    {type === "TRUCK"
+                      ? `${type} (includes premium SUVs)`
+                      : type.replace("_", " ")}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage
+                name="vehicleType"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
 
-          {/* Low Profile Checkbox */}
-          <div className="mb-4">
-            <label className="flex items-center space-x-3">
-              <Field type="checkbox" name="lowProfile" />
-              <span>Low Profile</span>
-            </label>
-          </div>
+            {/* Wheel Count */}
+            <div>
+              <label
+                htmlFor="wheelCount"
+                className="block text-sm font-medium mb-2"
+              >
+                Number of Tires
+              </label>
+              <Field
+                as="select"
+                id="wheelCount"
+                name="wheelCount"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage
+                name="wheelCount"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
 
-          {/* Notes Field */}
-          <div className="mb-4">
-            <label htmlFor="notes" className="block text-lg font-bold mb-2">
-              Additional Notes
-            </label>
-            <Field
-              as="textarea"
-              id="notes"
-              name="notes"
-              rows="4"
-              className="w-full border border-gray-500 p-2 rounded bg-[#333] text-white placeholder-gray-400 resize-none"
-              placeholder="Enter any additional notes..."
-            />
-            <ErrorMessage name="notes" component="div" className="text-red-500 mt-1" />
-          </div>
+            {/* Flat Run */}
+            <div>
+              <label className="inline-flex items-center space-x-2">
+                <Field
+                  type="checkbox"
+                  name="flatRun"
+                  className="w-4 h-4 border border-gray-300 rounded"
+                />
+                <span>Flat Run</span>
+              </label>
+            </div>
 
-          {/* Buttons */}
-          <div className="flex gap-4">
-            <button
-              type="button"
-              className="px-6 py-3 bg-green-500 text-white rounded flex-grow hover:bg-green-600 transition-transform transform hover:scale-105"
-              onClick={() => resetForm()}
-            >
-              Save & Add Another
-            </button>
+            {/* Low Profile */}
+            <div>
+              <label className="inline-flex items-center space-x-2">
+                <Field
+                  type="checkbox"
+                  name="lowProfile"
+                  className="w-4 h-4 border border-gray-300 rounded"
+                />
+                <span>Low Profile</span>
+              </label>
+            </div>
 
-            <button
-              type="submit"
-              className="px-6 py-3 bg-blue-500 text-white rounded flex-grow hover:bg-blue-600 transition-transform transform hover:scale-105"
-              disabled={isSubmitting}
-            >
-              Save & Go to Schedule Tire Mounting
-            </button>
-          </div>
-        </Form>
-      )}
-    </Formik>
+            {/* Notes */}
+            <div>
+              <label
+                htmlFor="notes"
+                className="block text-sm font-medium mb-2"
+              >
+                Notes
+              </label>
+              <Field
+                as="textarea"
+                id="notes"
+                name="notes"
+                rows={3}
+                placeholder="Additional notes (optional)"
+                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              />
+              <ErrorMessage
+                name="notes"
+                component="div"
+                className="text-red-500 text-sm mt-1"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                {submitButtonLabel}
+              </button>
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </Form>
+        )}
+      </Formik>
+    </div>
   );
 };
 

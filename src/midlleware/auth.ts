@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { admin } from "../app/lib/firebaseAdmin";
+import admin  from "../app/lib/firebaseAdmin";
 
 export async function authMiddleware(req: Request) {
   const authHeader = req.headers.get("Authorization");
