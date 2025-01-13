@@ -1,126 +1,128 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "../../../app/lib/db";
-import admin from "../../lib/firebaseAdmin"; // Використовуємо для перевірки токена
+import { verifyServerToken } from "../../lib/firebaseAdmin"; // Імпорт функції верифікації
+import db from "../../lib/db"; // Prisma клієнт
 
-// Функція для перевірки автентифікації
-async function getAuthenticatedSession(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  console.log("Authorization Header:", authHeader);
-
+// Функція для перевірки автентифікації користувача
+async function getAuthenticatedUser(req: NextRequest) {
+  const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.error("Authorization header is missing or invalid");
     throw new Error("Not authenticated");
   }
-
   const token = authHeader.split("Bearer ")[1];
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log("Decoded Token:", decodedToken);
-
-    return {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: decodedToken.name || "User",
-    };
-  } catch (error) {
-    console.error("Failed to verify token:", error);
-    throw new Error("Not authenticated");
+  const decodedToken = await verifyServerToken(token);
+  if (!decodedToken) {
+    throw new Error("Invalid token");
   }
+  return decodedToken.uid;
 }
 
-// GET: Отримання списку транспортних засобів
+// GET: Отримання записів для користувача
 export async function GET(req: NextRequest) {
   try {
-    const session = await getAuthenticatedSession(req);
+    const userId = await getAuthenticatedUser(req);
 
-    const vehicles = await db.vehicle.findMany({
-      where: { userId: session.uid },
+    const url = new URL(req.url);
+    const userQuery = url.searchParams.get("userId");
+
+    if (userId !== userQuery) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const appointments = await db.appointment.findMany({
+      where: { userId },
+      include: {
+        vehicle: true, // Повертаємо інформацію про транспортний засіб
+      },
     });
 
-    return NextResponse.json(vehicles);
+    return NextResponse.json(appointments);
   } catch (error) {
-    console.error("Failed to fetch vehicles:", error);
-    return handleError(error);
+    console.error("Error fetching appointments:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to fetch appointments" },
+      { status: error instanceof Error && error.message === "Not authenticated" ? 401 : 500 }
+    );
   }
 }
 
-// POST: Додавання нового транспортного засобу
+// POST: Створення нового запису
 export async function POST(req: NextRequest) {
   try {
-    const session = await getAuthenticatedSession(req);
+    const userId = await getAuthenticatedUser(req);
     const data = await req.json();
-    const { licensePlate, model, vehicleType } = data;
 
-    // Перевірка ліміту транспортних засобів
-    const vehicleCount = await db.vehicle.count({
-      where: { userId: session.uid },
-    });
+    const {
+      licensePlate,
+      dateTime,
+      type,
+      notes,
+      tireSize,
+      wheelCount,
+      flatRun,
+      lowProfile,
+    } = data;
 
-    if (vehicleCount >= 5) {
-      return NextResponse.json({ error: "Vehicle limit reached (5 vehicles max)" }, { status: 400 });
+    if (!licensePlate || !dateTime || !type || !tireSize || !wheelCount) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const newVehicle = await db.vehicle.create({
+    const newAppointment = await db.appointment.create({
       data: {
+        userId,
         licensePlate,
-        model,
-        vehicleType,
-        userId: session.uid,
+        dateTime: new Date(dateTime),
+        type,
+        status: "PENDING", // За замовчуванням статус PENDING
+        notes: notes || null,
+        tireSize,
+        wheelCount,
+        flatRun,
+        lowProfile,
       },
     });
 
-    return NextResponse.json(newVehicle, { status: 201 });
+    console.log("Appointment created:", newAppointment);
+    return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
-    console.error("Failed to add vehicle:", error);
-    return handleError(error);
+    console.error("Failed to create appointment:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to create appointment" },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE: Видалення транспортного засобу
+// DELETE: Видалення запису
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getAuthenticatedSession(req);
+    const userId = await getAuthenticatedUser(req);
+
     const { searchParams } = new URL(req.url);
-    const licensePlate = searchParams.get("licensePlate");
+    const appointmentId = searchParams.get("id");
 
-    if (!licensePlate) {
-      return NextResponse.json({ error: "License plate is required" }, { status: 400 });
+    if (!appointmentId) {
+      return NextResponse.json({ error: "Appointment ID is required" }, { status: 400 });
     }
 
-    // Перевірка наявності активних записів
-    const hasActiveAppointments = await db.appointment.findFirst({
-      where: {
-        licensePlate,
-        userId: session.uid,
-        status: { in: ["PENDING", "CONFIRMED"] },
-      },
+    const appointment = await db.appointment.findFirst({
+      where: { id: parseInt(appointmentId), userId },
     });
 
-    if (hasActiveAppointments) {
-      return NextResponse.json(
-        { error: "Cannot delete vehicle with active appointments" },
-        { status: 400 }
-      );
+    if (!appointment) {
+      return NextResponse.json({ error: "Appointment not found or unauthorized" }, { status: 404 });
     }
 
-    await db.vehicle.delete({
-      where: { licensePlate },
+    await db.appointment.delete({
+      where: { id: parseInt(appointmentId) },
     });
 
-    return NextResponse.json({ message: "Vehicle deleted successfully" });
+    console.log("Appointment deleted:", appointmentId);
+    return NextResponse.json({ message: "Appointment deleted successfully" });
   } catch (error) {
-    console.error("Failed to delete vehicle:", error);
-    return handleError(error);
+    console.error("Failed to delete appointment:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to delete appointment" },
+      { status: 500 }
+    );
   }
-}
-
-// Універсальна функція для обробки помилок
-function handleError(error: unknown) {
-  if (error instanceof Error) {
-    if (error.message === "Not authenticated") {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
 }

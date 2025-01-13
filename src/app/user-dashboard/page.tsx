@@ -3,13 +3,10 @@
 import React, { useEffect, useState } from "react";
 import useFetchUser from "../hooks/useFetchUser";
 import GarageSection from "../components/GarageSection";
+import AppointmentSection from "../components/AppointmentSection";
 import NotAuthenticated from "../components/NotAuthenticated";
-import { VehicleType } from "../types/VehicleType";
-interface Vehicle {
-  licensePlate: string;
-  model: string;
-  vehicleType: VehicleType;
-}
+import { Vehicle } from "../types/Vehicle";
+
 
 const UserDashboard: React.FC = () => {
   const user = useFetchUser(); // Хук для отримання користувача
@@ -83,9 +80,12 @@ const UserDashboard: React.FC = () => {
       <GarageSection
         vehicles={vehicles}
         onDelete={handleDeleteVehicle}
-        onAdd={(vehicle) => setVehicles((prev) => [...prev, vehicle])}
+        onAdd={(vehicle) => setVehicles((prev) => [...prev, { ...vehicle, userId: user.uid }])}
       />
+      <AppointmentSection userId={user.uid} vehicles={vehicles} />
     </div>
+    
+
   );
 };
 

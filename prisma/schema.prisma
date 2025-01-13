@@ -1,5 +1,3 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -25,35 +23,47 @@ model Vehicle {
   userId       String   // UID користувача
   model        String   @db.VarChar(100)
   vehicleType  VehicleType
+  tireSize     String   @db.VarChar(10)    // Розмір шин
+  wheelCount   Int                       // Кількість коліс
+  flatRun      Boolean                   // Підтримка Flat Run
+  lowProfile   Boolean                   // Чи низький профіль шин
+
   user         User     @relation(fields: [userId], references: [uid])
   appointments Appointment[]
 }
 
-// Appointment model
-model Appointment {
-  id           Int              @id @default(autoincrement())
-  userId       String           // UID користувача
-  licensePlate String           // Використання licensePlate замість vehicleId
-  dateTime     DateTime
-  type         ServiceType
-  status       AppointmentStatus @default(PENDING)
-  notes        String?           @db.VarChar(255)
-  tireSize     String
-  wheelCount   Int
-  flatRun      Boolean
-  lowProfile   Boolean
-
-  user         User              @relation(fields: [userId], references: [uid])
-  vehicle      Vehicle           @relation(fields: [licensePlate], references: [licensePlate])
-
-  @@unique([userId, licensePlate, dateTime])
+model Service {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(100)  // Назва послуги (наприклад, "Шиномонтаж")
+  description String       @db.VarChar(255) // Опис послуги
+  perTire     Float?       //  ціна за одне колесо --> ми планували давати на фронт обчислену ціну за 4 колеса, виходячи з цього поля ціни за одне колесо
+  flatRunCost Float?       // Додаткова ціна за Flat Run
+  lowProfileCost Float?    // Додаткова ціна за Low Profile
+  vehicleType VehicleType? // Тип транспортного засобу (опціонально, якщо послуга специфічна для типу авто)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
-model Service {
-  id        Int     @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model CompletedWheelCounter {
+  id           Int       @id @default(autoincrement())
+  totalWheels  Int       // Загальна кількість виконаних коліс
+  updatedAt    DateTime  @updatedAt // Дата останнього оновлення лічильника
+}
+
+model Appointment {
+  id               Int              @id @default(autoincrement())
+  userId           String           // UID користувача
+  licensePlate     String           // Використання licensePlate замість vehicleId
+  dateTime         DateTime
+  type             ServiceType
+  status           AppointmentStatus @default(PENDING)
+  notes            String?           @db.VarChar(255)
+  cancelledByAdmin Boolean?          // Позначає, чи скасовано адміністратором
+
+  user             User              @relation(fields: [userId], references: [uid])
+  vehicle          Vehicle           @relation(fields: [licensePlate], references: [licensePlate])
+
+  @@unique([userId, licensePlate, dateTime])
 }
 
 

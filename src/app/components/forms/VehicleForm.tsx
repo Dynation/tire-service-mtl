@@ -34,7 +34,6 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
     wheelCount: 4,
     flatRun: false,
     lowProfile: false,
-    notes: "",
   };
 
   const validationSchema = Yup.object({
@@ -45,10 +44,9 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
     tireSize: Yup.string().required("Please select a tire size"),
     vehicleType: Yup.string().required("Please select a vehicle type"),
     wheelCount: Yup.number()
-      .min(4, "Minimum 4 tires required")
-      .max(18, "Maximum 18 tires allowed")
+      .min(1, "Minimum 4 tires required")
+      .max(8, "Maximum 18 tires allowed")
       .required("Please select the number of tires"),
-    notes: Yup.string().max(255, "Notes must be 255 characters or less"),
   });
 
   const handleFormSubmit = async (values: typeof initialValues) => {
@@ -241,29 +239,6 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
                 />
                 <span>Low Profile</span>
               </label>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label
-                htmlFor="notes"
-                className="block text-sm font-medium mb-2"
-              >
-                Notes
-              </label>
-              <Field
-                as="textarea"
-                id="notes"
-                name="notes"
-                rows={3}
-                placeholder="Additional notes (optional)"
-                className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
-              />
-              <ErrorMessage
-                name="notes"
-                component="div"
-                className="text-red-500 text-sm mt-1"
-              />
             </div>
 
             {/* Buttons */}
