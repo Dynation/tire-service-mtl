@@ -1,4 +1,4 @@
-generator client {
+ generator client {
   provider = "prisma-client-js"
 }
 
@@ -13,6 +13,9 @@ model User {
   name         String
   email        String        @unique
   authProvider String        @default("firebase")
+  isPremium    Boolean       @default(false) // Преміум-статус
+  referralCode String?       @unique         // Реферальний код
+  fcmToken     String?       // Firebase Cloud Messaging токен
   appointments Appointment[]
   vehicles     Vehicle[]
 }
@@ -33,15 +36,24 @@ model Vehicle {
 }
 
 model Service {
-  id          Int          @id @default(autoincrement())
-  name        String       @db.VarChar(100)  // Назва послуги (наприклад, "Шиномонтаж")
-  description String       @db.VarChar(255) // Опис послуги
-  perTire     Float?       //  ціна за одне колесо --> ми планували давати на фронт обчислену ціну за 4 колеса, виходячи з цього поля ціни за одне колесо
-  flatRunCost Float?       // Додаткова ціна за Flat Run
-  lowProfileCost Float?    // Додаткова ціна за Low Profile
-  vehicleType VehicleType? // Тип транспортного засобу (опціонально, якщо послуга специфічна для типу авто)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             Int          @id @default(autoincrement())
+  name           String       @db.VarChar(100)  // Назва послуги (наприклад, "Шиномонтаж")
+  description    String       @db.VarChar(255) // Опис послуги
+  perTire        Float?       //  ціна за одне колесо --> ми планували давати на фронт обчислену ціну за 4 колеса, виходячи з цього поля ціни за одне колесо
+  flatRunCost    Float?       // Додаткова ціна за Flat Run
+  lowProfileCost Float?       // Додаткова ціна за Low Profile
+  vehicleType    VehicleType? // Тип транспортного засобу (опціонально, якщо послуга специфічна для типу авто)
+  premiumDiscount Float?      // Знижка для преміум користувачів
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Referral {
+  id             Int       @id @default(autoincrement())
+  referrerId     String    // UID користувача, який запросив
+  referredUserId String    // UID запрошеного користувача
+  rewardClaimed  Boolean   @default(false) // Чи було отримано бонус
+  createdAt      DateTime  @default(now())
 }
 
 model CompletedWheelCounter {
@@ -65,7 +77,6 @@ model Appointment {
 
   @@unique([userId, licensePlate, dateTime])
 }
-
 
 // Enums
 enum VehicleType {
