@@ -1,5 +1,4 @@
-"use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -7,22 +6,19 @@ import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
 import styles from "./CalendarPicker.module.css";
 
-
 export interface Appointment {
-  date: string; // ISO string, e.g., "2024-11-27"
-  time: string; // Localized time, e.g., "08:45 AM"
+  date: string;
+  time: string;
   serviceType: string;
-  vehicleType: VehicleType;
+  vehicleType: string;
 }
-
-export type VehicleType = "SMALL_CAR" | "SUV" | "TRUCK";
 
 export interface CalendarPickerProps {
   appointments: Appointment[];
   onDateSelect: (date: string) => void;
   selectedDate: string | null;
   onTimeSelect: (time: string) => void;
-  vehicleType: VehicleType; // New prop to handle vehicle type
+  vehicleType: string;
 }
 
 const CalendarPicker: React.FC<CalendarPickerProps> = ({
@@ -33,61 +29,56 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
   vehicleType,
 }) => {
   const [events, setEvents] = useState<EventInput[]>([]);
-  const [timeSlots, setTimeSlots] = useState<Date[]>([]);
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
 
-  const getAppointmentDuration = (vehicleType: VehicleType): number => {
-    switch (vehicleType) {
-      case "SMALL_CAR":
-        return 45;
-      case "SUV":
-        return 60;
-      case "TRUCK":
-        return 75;
-      default:
-        return 45;
-    }
-  };
+  // Кеш таймслотів для кожної дати
+  const timeSlotsCache = useRef<Record<string, string[]>>({});
 
   useEffect(() => {
-    if (!selectedDate) {
-      setTimeSlots([]);
-      return;
-    }
-  
-    const today = new Date();
-    today.setSeconds(0, 0); // Обнуляємо секунди і мілісекунди для точного порівняння
-    const selected = new Date(`${selectedDate}T00:00:00`);
-    const slots: Date[] = [];
-    const duration = getAppointmentDuration(vehicleType);
-  
-    const isToday =
-      today.getDate() === selected.getDate() &&
-      today.getMonth() === selected.getMonth() &&
-      today.getFullYear() === selected.getFullYear();
-  
-    console.log("Is Today:", isToday);
-  
-    for (let hour = 6; hour <= 23; hour++) {
-      let slotTime = new Date(selected);
-      slotTime.setHours(hour, 0, 0, 0);
-  
-      while (slotTime.getHours() === hour && slotTime.getHours() < 22) {
-        if (isToday && slotTime <= today) {
-          console.log("Skipping past slot:", slotTime);
-        } else if (slotTime < today) {
-          console.log("Skipping slot for past date:", slotTime);
-        } else {
-          console.log("Adding slot:", slotTime);
-          slots.push(new Date(slotTime));
-        }
-        slotTime = new Date(slotTime.getTime() + duration * 60000);
+    let isCancelled = false;
+
+    const fetchTimeSlots = async () => {
+      if (!selectedDate) return;
+
+      // Перевіряємо, чи є таймслоти у кеші
+      if (timeSlotsCache.current[selectedDate]) {
+        setTimeSlots(timeSlotsCache.current[selectedDate]);
+        return;
       }
-    }
-  
-    setTimeSlots(slots);
+
+      setTimeSlots([]);
+      setLoadingSlots(true);
+
+      try {
+        const response = await fetch(
+          `/api/timeslots?date=${selectedDate}&vehicleType=${vehicleType}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch time slots");
+        }
+        const data = await response.json();
+        if (!isCancelled) {
+          timeSlotsCache.current[selectedDate] = data.availableSlots; // Кешуємо слоти
+          setTimeSlots(data.availableSlots);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Error fetching time slots:", error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoadingSlots(false);
+        }
+      }
+    };
+
+    fetchTimeSlots();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [selectedDate, vehicleType]);
-  
-  
 
   useEffect(() => {
     const formattedEvents = appointments.map((appointment) => ({
@@ -103,16 +94,9 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
     onDateSelect(info.dateStr);
   };
 
-  const handleTimeClick = (time: Date) => {
-    const formattedTime = time.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-    console.log("Selected Time:", formattedTime);
-    onTimeSelect(formattedTime);
-  }; 
-  
+  const handleTimeClick = (time: string) => {
+    onTimeSelect(time);
+  };
 
   return (
     <div className={styles.calendarContainer}>
@@ -126,37 +110,34 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
         dateClick={handleDateClick}
         selectable
       />
+
       {selectedDate && (
         <div className={styles.timeSlotsSection}>
           <h3 className={styles.sectionTitle}>
-            Available Appointments on {selectedDate}
+            {loadingSlots
+              ? "Loading available slots..."
+              : `Available Appointments on ${selectedDate}`}
           </h3>
           <div className={styles.timeSlotsGrid}>
-            {timeSlots.length === 0 ? (
+            {loadingSlots ? (
+              <p>Loading...</p>
+            ) : timeSlots.length === 0 ? (
               <p>No available slots for the selected date.</p>
             ) : (
-              timeSlots.map((time, index) => {
-                const timeString = time.toLocaleTimeString("en-US", {
+              timeSlots.map((slot, index) => {
+                const timeString = new Date(slot).toLocaleTimeString("en-US", {
                   hour: "2-digit",
                   minute: "2-digit",
                   hour12: true,
                 });
 
-                const isOccupied = appointments.some(
-                  (appt) =>
-                    appt.date === selectedDate &&
-                    appt.time === timeString
-                );
-
                 return (
                   <div
-                    key={`${time.toISOString()}-${index}`}
-                    onClick={() => !isOccupied && handleTimeClick(time)}
-                    className={`${styles.timeSlot} ${
-                      isOccupied ? styles.occupied : styles.available
-                    }`}
+                    key={`${slot}-${index}`}
+                    onClick={() => handleTimeClick(timeString)}
+                    className={styles.available}
                   >
-                    {timeString} {isOccupied ? "(Occupied)" : "(Available)"}
+                    {timeString}
                   </div>
                 );
               })
@@ -169,4 +150,3 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
 };
 
 export default CalendarPicker;
-

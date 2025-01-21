@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyServerToken } from "../../lib/firebaseAdmin"; // Імпорт функції верифікації
+import sanitizeHtml from "sanitize-html";
 import db from "../../lib/db"; // Prisma клієнт
+import { ServiceType } from "@prisma/client";
+
 
 // Функція для перевірки автентифікації користувача
 async function getAuthenticatedUser(req: NextRequest) {
@@ -47,44 +50,51 @@ export async function GET(req: NextRequest) {
 
 // POST: Створення нового запису
 export async function POST(req: NextRequest) {
+  let userId: string | undefined;
+  let licensePlate: string | undefined;
+  let dateTime: string | undefined;
+  let type: string | undefined;
+  let notes: string | null = null;
+
   try {
-    const userId = await getAuthenticatedUser(req);
+    userId = await getAuthenticatedUser(req);
     const data = await req.json();
+    ({ licensePlate, dateTime, type, notes } = data);
+   
 
-    const {
-      licensePlate,
-      dateTime,
-      type,
-      notes,
-      tireSize,
-      wheelCount,
-      flatRun,
-      lowProfile,
-    } = data;
+    console.log("Received data:", { userId, licensePlate, dateTime, type, notes });
 
-    if (!licensePlate || !dateTime || !type || !tireSize || !wheelCount) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!userId || !licensePlate || !dateTime || !type) {
+      throw new Error("Missing required fields");
     }
+
+    const sanitizedNotes = sanitizeHtml(notes || "", {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
 
     const newAppointment = await db.appointment.create({
       data: {
         userId,
         licensePlate,
         dateTime: new Date(dateTime),
-        type,
-        status: "PENDING", // За замовчуванням статус PENDING
-        notes: notes || null,
-        tireSize,
-        wheelCount,
-        flatRun,
-        lowProfile,
+        type: ServiceType.TIRE,
+        status: "PENDING",
+        notes: sanitizedNotes || null,
+        cancelledByAdmin: false,
       },
     });
 
     console.log("Appointment created:", newAppointment);
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
-    console.error("Failed to create appointment:", error);
+    console.error("Failed to create appointment:", error, {
+      userId,
+      licensePlate,
+      dateTime,
+      type,
+      notes,
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create appointment" },
       { status: 500 }
@@ -112,16 +122,20 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Appointment not found or unauthorized" }, { status: 404 });
     }
 
-    await db.appointment.delete({
+    // Позначення запису як скасованого, а не видалення
+    const updatedAppointment = await db.appointment.update({
       where: { id: parseInt(appointmentId) },
+      data: {
+        status: "CANCELLED",
+      },
     });
 
-    console.log("Appointment deleted:", appointmentId);
-    return NextResponse.json({ message: "Appointment deleted successfully" });
+    console.log("Appointment cancelled:", updatedAppointment);
+    return NextResponse.json({ message: "Appointment cancelled successfully" });
   } catch (error) {
-    console.error("Failed to delete appointment:", error);
+    console.error("Failed to cancel appointment:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete appointment" },
+      { error: error instanceof Error ? error.message : "Failed to cancel appointment" },
       { status: 500 }
     );
   }

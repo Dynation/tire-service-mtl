@@ -24,12 +24,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem("authToken", token); // Зберігаємо токен
         setUser(currentUser);
         setIsAuthenticated(true);
+
+        // Викликаємо API для створення користувача
+        try {
+          const response = await fetch("/api/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              uid: currentUser.uid,
+              name: currentUser.displayName || "User",
+              email: currentUser.email,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error("Не вдалося створити користувача:", await response.json());
+          } else {
+            console.log("Користувач успішно створений або вже існує");
+          }
+        } catch (error) {
+          console.error("Помилка при створенні користувача:", error);
+        }
       } else {
         localStorage.removeItem("authToken"); // Видаляємо токен, якщо користувач не автентифікований
         setUser(null);
         setIsAuthenticated(false);
       }
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -74,3 +99,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

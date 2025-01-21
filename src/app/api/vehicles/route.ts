@@ -44,13 +44,26 @@ function handleError(error: unknown) {
 }
 // POST: Додавання нового транспортного засобу
 export async function POST(req: NextRequest) {
+  
   logRequest(req);
 
   try {
     const session = await getAuthenticatedSession(req);
     const data = await req.json();
-    const { licensePlate, model, vehicleType } = data;
-
+        // Приведення до коректних типів
+        const {
+          licensePlate,
+          model,
+          vehicleType,
+          tireSize,
+          wheelCount,
+          flatRun,
+          lowProfile,
+        } = {
+          ...data,
+          wheelCount: parseInt(data.wheelCount, 10), // Перетворення wheelCount у число
+        };
+    console.log("Received data:", data);
     if (!licensePlate || !model || !vehicleType) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
@@ -69,6 +82,10 @@ export async function POST(req: NextRequest) {
         model,
         vehicleType,
         userId: session.uid,
+        tireSize: tireSize || '',
+        wheelCount: wheelCount || 4,
+        flatRun: flatRun || false,
+        lowProfile: lowProfile || false,
       },
     });
 

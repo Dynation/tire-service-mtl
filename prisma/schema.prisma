@@ -71,7 +71,6 @@ model Appointment {
   status           AppointmentStatus @default(PENDING)
   notes            String?           @db.VarChar(255)
   cancelledByAdmin Boolean?          // Позначає, чи скасовано адміністратором
-
   user             User              @relation(fields: [userId], references: [uid])
   vehicle          Vehicle           @relation(fields: [licensePlate], references: [licensePlate])
 

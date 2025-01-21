@@ -44,18 +44,19 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
     tireSize: Yup.string().required("Please select a tire size"),
     vehicleType: Yup.string().required("Please select a vehicle type"),
     wheelCount: Yup.number()
-      .min(1, "Minimum 4 tires required")
-      .max(8, "Maximum 18 tires allowed")
+      .min(1, "Minimum 1 tires required")
+      .max(8, "Maximum 8 tires allowed")
       .required("Please select the number of tires"),
   });
 
   const handleFormSubmit = async (values: typeof initialValues) => {
+    console.log("Form values being submitted:", values); // Додаємо логування
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
         throw new Error("User is not authenticated");
       }
-
+  
       const response = await fetch("/api/vehicles", {
         method: "POST",
         headers: {
@@ -64,12 +65,12 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
         },
         body: JSON.stringify(values),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add vehicle");
       }
-
+  
       alert("Vehicle added successfully!");
       if (onCancel) onCancel(); // Закриваємо форму після успіху
     } catch (error) {
@@ -77,6 +78,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
       alert((error as Error).message);
     }
   };
+  
 
 
 

@@ -6,17 +6,20 @@ import { Vehicle } from "../types/Vehicle";
 interface AppointmentSectionProps {
   userId: string;
   vehicles: Vehicle[];
+  refreshAppointments: () => Promise<void>; // Додайте цю властивість
 }
 
 const AppointmentSection: React.FC<AppointmentSectionProps> = ({
   userId,
   vehicles,
+  refreshAppointments,
 }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [notes, setNotes] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAppointments = useCallback(async () => {
@@ -47,27 +50,17 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [userId]); // `userId` як залежність
+  }, [userId]); // Додано `userId` та `refreshAppointments`
 
   useEffect(() => {
+    console.log("UserId is:", userId); // Лог для уникнення "unused var"
     fetchAppointments();
-  }, [fetchAppointments]); // `fetchAppointments` як залежність
+  }, [fetchAppointments, userId]);
 
-  const handleDateSelect = (date: string) => {
+  const handleDateSelect = async (date: string) => {
     setSelectedDate(date);
+    await refreshAppointments(); // Оновлюємо список після вибору дати
   };
-
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-  };
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  if (error) {
-    return <p className="text-red-500">{error}</p>;
-  }
 
   const handleSubmitAppointment = async () => {
     if (!selectedDate || !selectedTime || !selectedVehicle) {
@@ -82,11 +75,10 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
       }
 
       const newAppointment = {
-        date: selectedDate,
-        time: selectedTime,
-        serviceType: "PENDING",
-        vehicleType: selectedVehicle.vehicleType,
-        vehicleId: selectedVehicle.licensePlate,
+        dateTime: `${selectedDate}T${selectedTime}`,
+        type: "PENDING",
+        licensePlate: selectedVehicle.licensePlate,
+        notes, // Передаємо notes
       };
 
       const response = await fetch("/api/appointments", {
@@ -102,8 +94,7 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
         throw new Error("Failed to create appointment");
       }
 
-      const savedAppointment = await response.json();
-      setAppointments((prev) => [...prev, savedAppointment]);
+      await refreshAppointments();
       alert("Appointment successfully created!");
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -151,10 +142,15 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
 
       {/* Календар */}
       <CalendarPicker
-        appointments={appointments}
+        appointments={appointments.map((apt) => ({
+          ...apt,
+          date: apt.dateTime.split("T")[0],
+          time: apt.dateTime.split("T")[1],
+          serviceType: apt.status,
+        }))}
         onDateSelect={handleDateSelect}
         selectedDate={selectedDate}
-        onTimeSelect={handleTimeSelect}
+        onTimeSelect={setSelectedTime}
         vehicleType={selectedVehicle?.vehicleType || "SMALL_CAR"}
       />
 
@@ -171,6 +167,21 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
           <p>
             <strong>Time:</strong> {selectedTime}
           </p>
+          <div className="mt-2">
+            <label
+              htmlFor="notes"
+              className="block mb-2 text-sm font-medium"
+            >
+              Additional Notes:
+            </label>
+            <textarea
+              id="notes"
+              rows={3}
+              placeholder="Add any additional information..."
+              className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
           <button
             onClick={handleSubmitAppointment}
             className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
