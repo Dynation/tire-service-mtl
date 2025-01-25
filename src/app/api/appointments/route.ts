@@ -1,3 +1,4 @@
+//appointments/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { verifyServerToken } from "../../lib/firebaseAdmin"; // Імпорт функції верифікації
 import sanitizeHtml from "sanitize-html";
@@ -50,57 +51,81 @@ export async function GET(req: NextRequest) {
 
 // POST: Створення нового запису
 export async function POST(req: NextRequest) {
-  let userId: string | undefined;
-  let licensePlate: string | undefined;
-  let dateTime: string | undefined;
-  let type: string | undefined;
-  let notes: string | null = null;
-
   try {
-    userId = await getAuthenticatedUser(req);
-    const data = await req.json();
-    ({ licensePlate, dateTime, type, notes } = data);
-   
-
-    console.log("Received data:", { userId, licensePlate, dateTime, type, notes });
-
-    if (!userId || !licensePlate || !dateTime || !type) {
-      throw new Error("Missing required fields");
+    // Отримуємо автентифікованого користувача
+    const userId = await getAuthenticatedUser(req);
+    if (!userId) {
+      throw new Error("Authentication required");
     }
 
+    // Парсимо дані із запиту
+    const { licensePlate, dateTime, type, notes } = await req.json();
+
+    // Валідація вхідних даних
+    if (!licensePlate || !dateTime || !type) {
+      return NextResponse.json(
+        { error: "Missing required fields: licensePlate, dateTime, or type" },
+        { status: 400 }
+      );
+    }
+
+    // Перевіряємо, чи тип є допустимим
+    if (!Object.values(ServiceType).includes(type as ServiceType)) {
+      return NextResponse.json(
+        { error: `Invalid service type: ${type}` },
+        { status: 400 }
+      );
+    }
+
+    // Перевірка, чи запис вже існує
+    const existingAppointment = await db.appointment.findFirst({
+      where: {
+        userId,
+        licensePlate,
+        dateTime: new Date(dateTime),
+      },
+    });
+
+    if (existingAppointment) {
+      return NextResponse.json(
+        { error: "Appointment already exists for this time and vehicle" },
+        { status: 409 }
+      );
+    }
+
+    // Санітизуємо нотатки
     const sanitizedNotes = sanitizeHtml(notes || "", {
       allowedTags: [],
       allowedAttributes: {},
     });
 
+    // Створюємо запис
     const newAppointment = await db.appointment.create({
       data: {
         userId,
         licensePlate,
         dateTime: new Date(dateTime),
-        type: ServiceType.TIRE,
+        type: type as ServiceType,
         status: "PENDING",
         notes: sanitizedNotes || null,
         cancelledByAdmin: false,
       },
     });
 
+    // Лог успішного створення
     console.log("Appointment created:", newAppointment);
+
+    // Повертаємо відповідь
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
-    console.error("Failed to create appointment:", error, {
-      userId,
-      licensePlate,
-      dateTime,
-      type,
-      notes,
-    });
+    console.error("Failed to create appointment:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create appointment" },
+      { error: error instanceof Error ? error.message : "Internal Server Error" },
       { status: 500 }
     );
   }
 }
+
 
 // DELETE: Видалення запису
 export async function DELETE(req: NextRequest) {

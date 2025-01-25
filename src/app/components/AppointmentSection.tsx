@@ -1,12 +1,16 @@
+"use client";
+
 import React, { useState, useEffect, useCallback } from "react";
-import CalendarPicker from "../components/calendarpicker/calendarPicker";
+
+import CalendarPicker from "./calendarpicker/calendarPicker";
 import { Appointment } from "../types/Appointment";
+import TimeGrid from "./timegrid/TimeGrid";
 import { Vehicle } from "../types/Vehicle";
 
 interface AppointmentSectionProps {
   userId: string;
   vehicles: Vehicle[];
-  refreshAppointments: () => Promise<void>; // Додайте цю властивість
+  refreshAppointments: () => Promise<void>;
 }
 
 const AppointmentSection: React.FC<AppointmentSectionProps> = ({
@@ -22,27 +26,30 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
   const [notes, setNotes] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  console.log(appointments); // Лог для перевірки отриманих записів
+
+  // Завантаження списку записів
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
+  
       const token = localStorage.getItem("authToken");
       if (!token) {
         throw new Error("User is not authenticated");
       }
-
+  
       const response = await fetch(`/api/appointments?userId=${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch appointments");
       }
-
-      const data = await response.json();
+  
+      const data: Appointment[] = await response.json();
       setAppointments(data);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -50,37 +57,46 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [userId]); // Додано `userId` та `refreshAppointments`
+  }, [userId]);
+  
 
   useEffect(() => {
-    console.log("UserId is:", userId); // Лог для уникнення "unused var"
     fetchAppointments();
-  }, [fetchAppointments, userId]);
+  }, [fetchAppointments]);
 
+  // Обробка вибору дати
   const handleDateSelect = async (date: string) => {
     setSelectedDate(date);
-    await refreshAppointments(); // Оновлюємо список після вибору дати
+    await refreshAppointments(); // Оновлення записів
   };
 
+  // Обробка вибору часу
+  const handleTimeSelect = (time: string) => {
+    setSelectedTime(time);
+  };
+
+  // Надсилання нового запису
   const handleSubmitAppointment = async () => {
-    if (!selectedDate || !selectedTime || !selectedVehicle) {
+    if (!selectedTime || !selectedVehicle) {
       alert("Please select a vehicle, date, and time.");
       return;
     }
 
     try {
       const token = localStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("User is not authenticated");
-      }
+      if (!token) throw new Error("User is not authenticated");
 
       const newAppointment = {
-        dateTime: `${selectedDate}T${selectedTime}`,
-        type: "PENDING",
+        dateTime: selectedTime, // ISO-формат
+        type: "TIRE", // або "REPAIR", залежно від логіки
+        status: "PENDING", // Нові записи завжди у статусі "PENDING"
         licensePlate: selectedVehicle.licensePlate,
-        notes, // Передаємо notes
+        notes,
       };
+      
+    console.log("New Appointment:", newAppointment);
 
+      console.log("Request JSON:", JSON.stringify(newAppointment, null, 2));
       const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {
@@ -89,12 +105,11 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
         },
         body: JSON.stringify(newAppointment),
       });
+      console.log("Response:", response);
+      
+      if (!response.ok) throw new Error("Failed to create appointment");
 
-      if (!response.ok) {
-        throw new Error("Failed to create appointment");
-      }
-
-      await refreshAppointments();
+      await refreshAppointments(); // Оновлення після створення запису
       alert("Appointment successfully created!");
     } catch (error) {
       console.error("Error creating appointment:", error);
@@ -102,13 +117,9 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
     }
   };
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
+  if (loading) return <p>Loading...</p>;
 
-  if (error) {
-    return <p className="text-red-500">{error}</p>;
-  }
+  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="appointment-section p-4 max-w-4xl mx-auto bg-[var(--background)] text-[var(--foreground)] rounded shadow-lg">
@@ -140,19 +151,31 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
         </select>
       </div>
 
-      {/* Календар */}
-      <CalendarPicker
-        appointments={appointments.map((apt) => ({
-          ...apt,
-          date: apt.dateTime.split("T")[0],
-          time: apt.dateTime.split("T")[1],
-          serviceType: apt.status,
-        }))}
-        onDateSelect={handleDateSelect}
-        selectedDate={selectedDate}
-        onTimeSelect={setSelectedTime}
-        vehicleType={selectedVehicle?.vehicleType || "SMALL_CAR"}
-      />
+      {/* Календар та сітка часу */}
+      <div>
+        <CalendarPicker
+  appointments={appointments.map((appt) => ({
+    ...appt,
+    date: appt.dateTime.split("T")[0],
+    time: appt.dateTime.split("T")[1],
+  }))}
+  onDateSelect={handleDateSelect}
+  vehicleType={selectedVehicle?.vehicleType || "SMALL_CAR"}
+  selectedDate={selectedDate}
+        />
+        {selectedDate && (
+          <TimeGrid
+            date={selectedDate}
+            vehicleType={selectedVehicle?.vehicleType || "SMALL_CAR"}
+            appointments={appointments}
+            onSlotSelect={(startTime, endTime) => {
+              console.log(`Selected Slot: ${startTime} - ${endTime}`);
+              setSelectedTime(startTime);
+            }}
+            onTimeSelect={handleTimeSelect}
+          />
+        )}
+      </div>
 
       {/* Підтвердження запису */}
       {selectedDate && selectedTime && selectedVehicle && (
