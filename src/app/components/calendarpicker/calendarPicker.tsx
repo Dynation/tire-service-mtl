@@ -4,8 +4,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
-import { Appointment } from "../../types/Appointment";
 
+import { Appointment } from "../../types/Appointment";
 import styles from "./CalendarPicker.module.css";
 
 // Removed redundant local Appointment interface

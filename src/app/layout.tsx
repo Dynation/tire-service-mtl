@@ -5,7 +5,7 @@ import Header from "./layout/Header";
 import Footer from "./layout/Footer";
 import "./globals.css";
 import localFont from "next/font/local";
-import { AuthProvider } from "../app/context/AuthContext"; // Импортируем AuthProvider
+import { AuthProvider } from "../app/context/AuthContext"; 
 
 // Подключение локальных шрифтов
 const geistSans = localFont({
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider> {/* Оборачиваем контекстом авторизации */}
+        <AuthProvider>
           <Header />
           <main>{children}</main>
           <Footer />
