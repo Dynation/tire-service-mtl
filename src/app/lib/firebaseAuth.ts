@@ -1,9 +1,8 @@
-// src/lib/firebaseAuth.ts
-
-import { initializeApp } from "firebase/app";
+// firebaseAuth.ts
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Конфигурация вашего веб-приложения Firebase
+// Конфігурація Firebase для клієнтської сторони
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,10 +13,24 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Инициализация Firebase
-const app = initializeApp(firebaseConfig);
-
-// Инициализация Firebase Authentication
+// Ініціалізація клієнтського додатка
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// Функція для отримання сесії
+export const getSession = async () => {
+  const user = auth.currentUser;
+
+  if (user) {
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      token: await user.getIdToken(),
+    };
+  } else {
+    throw new Error("Користувач не авторизований");
+  }
+};
 
 export default auth;

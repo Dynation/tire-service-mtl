@@ -1,14 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import {
-  onAuthStateChanged,
-  User,
-  signOut,
-  signInWithPopup,
-  GoogleAuthProvider,
-} from "firebase/auth";
-import auth from "../lib/firebaseAuth";
+import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 
-// Определение типа для данных пользователя
+const auth = getAuth();
+
+// Типи для контексту
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
@@ -20,49 +15,73 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Подписываемся на изменения авторизации через Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setIsAuthenticated(!!currentUser);
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        localStorage.setItem("authToken", token); // Зберігаємо токен
+        setUser(currentUser);
+        setIsAuthenticated(true);
 
-     // Створюємо запис користувача в базі даних після авторизації
-if (currentUser) {
-  try {
-    await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uid: currentUser.uid, // Додаємо uid користувача
-        name: currentUser.displayName || "Anonymous",
-        email: currentUser.email,
-      }),
-    });
-  } catch (error) {
-    console.error("Error creating user in database:", error);
-  }
-}
+        // Викликаємо API для створення користувача
+        try {
+          const response = await fetch("/api/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              uid: currentUser.uid,
+              name: currentUser.displayName || "User",
+              email: currentUser.email,
+            }),
+          });
 
+          if (!response.ok) {
+            console.error("Не вдалося створити користувача:", await response.json());
+          } else {
+            console.log("Користувач успішно створений або вже існує");
+          }
+        } catch (error) {
+          console.error("Помилка при створенні користувача:", error);
+        }
+      } else {
+        localStorage.removeItem("authToken"); // Видаляємо токен, якщо користувач не автентифікований
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
   const signIn = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+
+      localStorage.setItem("authToken", token); // Зберігаємо токен після входу
+      setUser(result.user);
+      setIsAuthenticated(true);
+
+      console.log("Успішний вхід! Токен збережено:", token);
     } catch (error) {
-      console.error("Ошибка входа:", error);
+      console.error("Помилка входу:", error);
     }
   };
 
   const signOutUser = async () => {
     try {
-      await signOut(auth);
+      await auth.signOut();
+      localStorage.removeItem("authToken"); // Видаляємо токен при виході
+      setUser(null);
+      setIsAuthenticated(false);
     } catch (error) {
-      console.error("Ошибка выхода:", error);
+      console.error("Помилка виходу:", error);
     }
   };
 
@@ -73,11 +92,11 @@ if (currentUser) {
   );
 };
 
-// Хук для использования AuthContext
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
+

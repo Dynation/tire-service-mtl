@@ -3,28 +3,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Variables for Light and Dark Themes */
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --button-background: #ccc9c9;
-  --button-text: #000000;
-  --button-shadow: rgba(0, 0, 0, 0.2);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --button-background: #333333;
-    --button-text: #ffffff;
-    --button-shadow: rgba(255, 255, 255, 0.2);
-  }
+
+/* Custom Variables for Ubuntu-HighSierra Theme */
+:root {
+  --background: #362e40;
+  --foreground: #eceff4;
+  --primary-accent: #d08770; /* Ubuntu помаранчевий */
+  --secondary-accent: #005BBB; /* Синій акцент для деталей */
+  --highlight: #FFD500; /* Жовтий акцент для виділення */
+  --button-background: #3b4252;
+  --button-text: #eceff4;
+  --button-shadow: rgba(0, 0, 0, 0.3);
 }
 
 /* Main Content Styles */
 body {
   @apply bg-[var(--background)] text-[var(--foreground)] font-sans flex flex-col;
+}
+
+h1, h2, h3 {
+  @apply text-[var(--primary-accent)];
+}
+
+button {
+  @apply px-4 py-2 rounded bg-[var(--button-background)] text-[var(--button-text)];
+  box-shadow: 0 4px 10px var(--button-shadow);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: var(--primary-accent);
+  transform: scale(1.05);
+}
+
+/* Highlights for Important Text */
+.highlight {
+  color: var(--highlight);
+  font-weight: bold;
 }
 
 /* Swiper Wrapper Transition */

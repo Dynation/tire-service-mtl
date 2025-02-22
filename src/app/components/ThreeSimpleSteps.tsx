@@ -20,7 +20,7 @@ const steps = [
 
 const ThreeSimpleSteps: React.FC = () => {
   return (
-    <section className="p-10 text-center bg-customBlue">
+    <section className="p-10 text-center">
       <h2 className="text-3xl font-bold mb-10 text-white">
         Three Simple Steps to Book Your Tire Service
       </h2>

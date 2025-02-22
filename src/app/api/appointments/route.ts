@@ -1,162 +1,167 @@
-import { NextResponse } from "next/server";
-import { PrismaClient, ServiceType } from "@prisma/client";
+//appointments/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { verifyServerToken } from "../../lib/firebaseAdmin"; // Імпорт функції верифікації
+import sanitizeHtml from "sanitize-html";
+import db from "../../lib/db"; // Prisma клієнт
+import { ServiceType } from "@prisma/client";
 
-const prisma = new PrismaClient();
 
-// GET handler
-export async function GET() {
+// Функція для перевірки автентифікації користувача
+async function getAuthenticatedUser(req: NextRequest) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("Not authenticated");
+  }
+  const token = authHeader.split("Bearer ")[1];
+  const decodedToken = await verifyServerToken(token);
+  if (!decodedToken) {
+    throw new Error("Invalid token");
+  }
+  return decodedToken.uid;
+}
+
+// GET: Отримання записів для користувача
+export async function GET(req: NextRequest) {
   try {
-    const appointments = await prisma.appointment.findMany({
-      select: {
-        id: true,
-        userId: true,
-        dateTime: true,
-        type: true,
-        status: true,
-        notes: true,
-        tireSize: true,
-        wheelCount: true,
-        flatRun: true,
-        lowProfile: true,
-        user: {
-          select: {
-            name: true,
-          },
-        },
-        vehicle: {
-          select: {
-            vehicleType: true,
-            model: true,
-            licensePlate: true,
-          },
-        },
+    const userId = await getAuthenticatedUser(req);
+
+    const url = new URL(req.url);
+    const userQuery = url.searchParams.get("userId");
+
+    if (userId !== userQuery) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const appointments = await db.appointment.findMany({
+      where: { userId },
+      include: {
+        vehicle: true, // Повертаємо інформацію про транспортний засіб
       },
     });
 
-    const formattedAppointments = appointments.map((appt) => ({
-      id: appt.id,
-      date: appt.dateTime.toISOString().split("T")[0],
-      time: new Date(appt.dateTime).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      }),
-      serviceType: appt.type,
-      status: appt.status,
-      vehicleType: appt.vehicle?.vehicleType || "Unknown",
-      tireSize: appt.tireSize,
-      wheelCount: appt.wheelCount,
-      flatRun: appt.flatRun,
-      lowProfile: appt.lowProfile,
-      notes: appt.notes || "",
-      userName: appt.user?.name || "Unknown",
-      vehicleModel: appt.vehicle?.model || "Unknown",
-      plateNumber: appt.vehicle?.licensePlate || "Unknown",
-    }));
-
-    return NextResponse.json(formattedAppointments);
+    return NextResponse.json(appointments);
   } catch (error) {
     console.error("Error fetching appointments:", error);
-    return NextResponse.json({ error: "Failed to fetch appointments" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to fetch appointments" },
+      { status: error instanceof Error && error.message === "Not authenticated" ? 401 : 500 }
+    );
   }
 }
 
-// POST handler
-export async function POST(request: Request) {
+// POST: Створення нового запису
+export async function POST(req: NextRequest) {
   try {
-    const data = await request.json();
+    // Отримуємо автентифікованого користувача
+    const userId = await getAuthenticatedUser(req);
+    if (!userId) {
+      throw new Error("Authentication required");
+    }
 
-    const {
-      userId,
-      licensePlate,
-      model,
-      vehicleType,
-      dateTime,
-      type,
-      tireSize,
-      wheelCount,
-      flatRun,
-      lowProfile,
-      notes,
-    } = data;
+    // Парсимо дані із запиту
+    const { licensePlate, dateTime, type, notes } = await req.json();
 
-    // Перевірка на обов'язкові поля
-    if (!userId || !licensePlate || !model || !vehicleType || !dateTime || !type) {
-      console.error("Missing required appointment data:", {
-        userId,
-        licensePlate,
-        model,
-        vehicleType,
-        dateTime,
-        type,
-      });
+    // Валідація вхідних даних
+    if (!licensePlate || !dateTime || !type) {
       return NextResponse.json(
-        { error: "Missing required fields for creating appointment" },
+        { error: "Missing required fields: licensePlate, dateTime, or type" },
         { status: 400 }
       );
     }
 
-    // Валідація дати
-    const parsedDateTime = new Date(dateTime);
-    if (isNaN(parsedDateTime.getTime())) {
-      console.error("Invalid dateTime format:", dateTime);
+    // Перевіряємо, чи тип є допустимим
+    if (!Object.values(ServiceType).includes(type as ServiceType)) {
       return NextResponse.json(
-        { error: "Invalid dateTime format" },
+        { error: `Invalid service type: ${type}` },
         { status: 400 }
       );
     }
 
-    // Створення або оновлення транспортного засобу
-    await prisma.vehicle.upsert({
-      where: { licensePlate },
-      update: {
-        model,
-        vehicleType,
-      },
-      create: {
-        licensePlate,
+    // Перевірка, чи запис вже існує
+    const existingAppointment = await db.appointment.findFirst({
+      where: {
         userId,
-        model,
-        vehicleType,
+        licensePlate,
+        dateTime: new Date(dateTime),
       },
     });
 
-    console.log("Creating appointment with data:", {
-      userId,
-      licensePlate,
-      dateTime: parsedDateTime,
-      type,
-      status: "PENDING",
-      tireSize,
-      wheelCount,
-      flatRun,
-      lowProfile,
-      notes,
+    if (existingAppointment) {
+      return NextResponse.json(
+        { error: "Appointment already exists for this time and vehicle" },
+        { status: 409 }
+      );
+    }
+
+    // Санітизуємо нотатки
+    const sanitizedNotes = sanitizeHtml(notes || "", {
+      allowedTags: [],
+      allowedAttributes: {},
     });
 
-    // Створення запису Appointment
-    const newAppointment = await prisma.appointment.create({
+    // Створюємо запис
+    const newAppointment = await db.appointment.create({
       data: {
         userId,
         licensePlate,
-        dateTime: parsedDateTime,
+        dateTime: new Date(dateTime),
         type: type as ServiceType,
         status: "PENDING",
-        tireSize,
-        wheelCount,
-        flatRun,
-        lowProfile,
-        notes,
+        notes: sanitizedNotes || null,
+        cancelledByAdmin: false,
       },
     });
 
+    // Лог успішного створення
+    console.log("Appointment created:", newAppointment);
+
+    // Повертаємо відповідь
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
-    console.error("Error creating appointment:", error);
-    return NextResponse.json({ error: "Failed to create appointment" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
+    console.error("Failed to create appointment:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+
+// DELETE: Видалення запису
+export async function DELETE(req: NextRequest) {
+  try {
+    const userId = await getAuthenticatedUser(req);
+
+    const { searchParams } = new URL(req.url);
+    const appointmentId = searchParams.get("id");
+
+    if (!appointmentId) {
+      return NextResponse.json({ error: "Appointment ID is required" }, { status: 400 });
+    }
+
+    const appointment = await db.appointment.findFirst({
+      where: { id: parseInt(appointmentId), userId },
+    });
+
+    if (!appointment) {
+      return NextResponse.json({ error: "Appointment not found or unauthorized" }, { status: 404 });
+    }
+
+    // Позначення запису як скасованого, а не видалення
+    const updatedAppointment = await db.appointment.update({
+      where: { id: parseInt(appointmentId) },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
+    console.log("Appointment cancelled:", updatedAppointment);
+    return NextResponse.json({ message: "Appointment cancelled successfully" });
+  } catch (error) {
+    console.error("Failed to cancel appointment:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to cancel appointment" },
+      { status: 500 }
+    );
   }
 }

@@ -95,8 +95,8 @@ const Header: React.FC = () => {
       {isMenuOpen && (
         <div className="absolute top-16 right-0 w-full bg-gray-800">
           <div className="grid grid-cols-2 gap-4 p-4">
-            <Link href="/user-cabinet" className="block text-center py-2 text-white">
-              User Cabinet
+            <Link href="/user-dashboard" className="block text-center py-2 text-white">
+              User Dashdoard
             </Link>
             <Link href="/pricing" className="block text-center py-2 text-white">
               Pricing
@@ -119,4 +119,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-

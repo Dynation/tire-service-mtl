@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { uid, name, email } = await request.json();
+    const { uid, name, email, isPremium = false, referralCode = null, fcmToken = null } = await request.json();
 
     // Перевірка, чи існує вже користувач у базі даних
     const existingUser = await prisma.user.findUnique({
@@ -18,6 +18,9 @@ export async function POST(request: Request) {
           uid,
           name,
           email,
+          isPremium,
+          referralCode,
+          fcmToken,
         },
       });
     }
@@ -30,3 +33,4 @@ export async function POST(request: Request) {
     await prisma.$disconnect();
   }
 }
+

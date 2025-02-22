@@ -1,59 +1,31 @@
-/* CalendarPicker.module.css */
 .calendarContainer {
-  position: relative;
-  padding: 1rem;
+  @apply bg-[var(--background)] text-[var(--foreground)] p-4 rounded-lg shadow-lg;
 }
 
-/* Секция для списка доступных слотов времени */
-.timeSlotsSection {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+.fc {
+  @apply text-[var(--foreground)] font-sans;
 }
 
-/* Заголовок секции */
-.sectionTitle {
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 1rem;
+.fc-daygrid-day {
+  @apply bg-transparent border border-[rgba(255,255,255,0.2)] rounded-lg hover:bg-[var(--primary-accent)] transition duration-200;
 }
 
-/* Сетка для временных слотов */
-.timeSlotsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+.fc-daygrid-day-number {
+  @apply text-[var(--foreground)] font-bold text-center;
 }
 
-/* Базовый стиль для каждого временного слота */
-.timeSlot {
-  padding: 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease-in-out;
+.fc-event {
+  @apply bg-[var(--highlight)] text-[var(--foreground)] px-2 py-1 rounded-lg shadow-sm hover:shadow-md transition duration-200;
 }
 
-/* Доступный слот времени */
-.available {
-  background-color: #e6fffa;
-  color: #234e52;
+.fc-toolbar {
+  @apply mb-4 flex justify-between items-center text-[var(--foreground)];
 }
 
-/* Занятый слот времени */
-.occupied {
-  background-color: #fed7d7;
-  color: #822727;
-  text-decoration: line-through;
-  cursor: not-allowed;
+.fc-toolbar-title {
+  @apply text-xl font-bold;
 }
 
-/* Ховер эффект для доступных слотов */
-.timeSlot:hover:not(.occupied) {
-  background-color: #b2f5ea;
+.fc-button {
+  @apply bg-[var(--primary-accent)] text-[var(--foreground)] px-4 py-2 rounded-lg transition duration-200 hover:bg-[var(--secondary-accent)];
 }
-
-  
