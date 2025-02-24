@@ -1,311 +1,73 @@
-/* Header.module.css */
-
-/* Импорт шрифтов */
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk&display=swap");
-
-/* Стили для header */
+/* Загальний header */
 .header {
   position: relative;
-  height: fit-content;
-}
-
-.wrapper {
-  height: 200px;
-  position: relative;
-  z-index: 0;
+  width: 100%;
+  background: linear-gradient(to right, #12192c, #1e2a4a);
+  padding: 10px 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(15deg,#4f72c527 25%, #0e1c41c0, #021042e7, #9d66f527);
-  background-blend-mode: luminosity;
-  overflow: hidden;
+  border-bottom: 2px solid #ffcc00;
 }
 
-/* Локальные стили для titleSvg */
-.titleSvg {
-  font-family: "Hanken Grotesk", sans-serif;
-  width: 100%;
-  height: 100%;
-  animation: stroke 1s 3s ;
+/* Контейнер для лого */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.titleSvg text {
-  animation: stroke 2s 3s;
-  stroke-width: 1;
-  stroke: #F8FBC8;
-  font-size: 55px;
+/* Логотип */
+.logo {
+  width: 50px;
+  height: 50px;
 }
 
-/* Локальные стили для wheel */
-.wheel {
-  
-  stroke: #efff14;
-  position: absolute;
-  left: 5%;
-  top:30%;
-  width: 140px;
-  height: 140px;
-  transform-origin: center;
-  animation: rotate 5s ease-in-out;
+/* Назва бренду */
+.brand {
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
 }
 
-/* Анимации */
-@keyframes stroke {
-  0% {
-    fill: rgba(255, 246, 53, 0);
-    stroke: rgb(128, 129, 109);
-    stroke-dashoffset: 25%;
-    stroke-dasharray: 0 50%;
-    stroke-width: 2;
-  }
-  70% {
-    fill: rgba(255, 246, 53, 0);
-    stroke: rgba(248, 251, 200, 0.877);
-  }
-  80% {
-    fill: rgba(255, 246, 53, 0);
-    stroke: rgb(216, 219, 172);
-    stroke-width: 3;
-  }
-  100% {
-    fill: rgb(243, 101, 101);
-    stroke: rgba(248, 251, 200, 0);
-    stroke-dashoffset: -25%;
-    stroke-dasharray: 50% 0;
-    stroke-width: 0;
-  }
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(3600deg);
-  }
-}
-
-
-/* Навігація для десктопу */
+/* Навігація */
 .navLinks {
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  font-weight: bold;
-  font-size: 1rem;
+  gap: 20px;
+  margin-left: auto;
 }
 
 .navLinks a {
-  color: #ffffff;
-  transition: color 0.3s ease, transform 0.2s ease;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
 }
 
 .navLinks a:hover {
   color: #ffcc00;
-  transform: scale(1.1);
 }
 
-/* Навігація для мобільного меню */
-.mobileNav {
-  background-color: #0e1c41;
-  border-top: 2px solid #ffcc00;
-}
-
-.mobileNav a {
-  color: #ffffff;
-  padding: 0.25rem 0;
-  font-weight: bold;
-  text-transform: uppercase;
-  transition: color 0.3s ease;
-}
-
-.mobileNav a:hover {
-  color: #ffcc00;
-}
-
-/* Стили для headerUnderline */
-
-.headerUnderline1 {
-  position: absolute;
-  z-index: 20;
-  top: 155px;
-  width: 100%;
-  height: 60px;
-  background: linear-gradient(#2086fa, #101997);
-  clip-path: polygon(
-  0% 100%,    /* Ліва нижня точка */
-  5% 97%,     /* Нахилений лівий нижній край */
-  10% 94%, 
-  15% 91%, 
-  20% 88%, 
-  25% 85%, 
-  30% 82%, 
-  35% 79%, 
-  40% 76%, 
-  45% 73%, 
-  50% 70%, 
-  55% 67%, 
-  60% 64%, 
-  65% 61%, 
-  70% 58%, 
-  75% 55%, 
-  80% 52%, 
-  85% 49%, 
-  90% 46%, 
-  95% 43%, 
-  100% 40%,  /* Права нижня точка */
-  100% 0%,    /* Права верхня точка */
-  95% 3%,     /* Нахилений правий верхній край */
-  90% 6%, 
-  85% 9%, 
-  80% 12%, 
-  75% 15%, 
-  70% 18%, 
-  65% 21%, 
-  60% 24%, 
-  55% 27%, 
-  50% 30%, 
-  45% 33%, 
-  40% 36%, 
-  35% 39%, 
-  30% 42%, 
-  25% 45%, 
-  20% 48%, 
-  15% 51%, 
-  10% 54%, 
-  5% 57%, 
-  0% 60%    /* Ліва верхня точка */
-);
-
-  
-
-}
-
-.headerUnderline2 {
-  position: absolute;
-  z-index: 20;
-  top: 175px;
-  width: 100%;
-  height: 60px;
-  background:linear-gradient( rgb(250, 250, 60), rgba(238, 202, 1, 0.932)) ;
-  clip-path: polygon(
-  0% 100%,    /* Ліва нижня точка */
-  5% 97%,     /* Нахилений лівий нижній край */
-  10% 94%, 
-  15% 91%, 
-  20% 88%, 
-  25% 85%, 
-  30% 82%, 
-  35% 79%, 
-  40% 76%, 
-  45% 73%, 
-  50% 70%, 
-  55% 67%, 
-  60% 64%, 
-  65% 61%, 
-  70% 58%, 
-  75% 55%, 
-  80% 52%, 
-  85% 49%, 
-  90% 46%, 
-  95% 43%, 
-  100% 40%,  /* Права нижня точка */
-  100% 0%,    /* Права верхня точка */
-  95% 3%,     /* Нахилений правий верхній край */
-  90% 6%, 
-  85% 9%, 
-  80% 12%, 
-  75% 15%, 
-  70% 18%, 
-  65% 21%, 
-  60% 24%, 
-  55% 27%, 
-  50% 30%, 
-  45% 33%, 
-  40% 36%, 
-  35% 39%, 
-  30% 42%, 
-  25% 45%, 
-  20% 48%, 
-  15% 51%, 
-  10% 54%, 
-  5% 57%, 
-  0% 60%    /* Ліва верхня точка */
-);
-
-}
-
-/* Стили для authButton */
+/* Кнопка входу */
 .authButton {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin-left: auto;
 }
 
 .authButton button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  box-shadow: #1a751d 1px 2px 5px;
+  background: #ffcc00;
+  color: #12192c;
   padding: 8px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  border-radius: 4px;
-}
-
-.authButton button:hover {
-  background-color: #3c8f41;
-  box-shadow: #78af7a inset 1px 2px 5px;
-}
-
-.userInfo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.userInfo span {
-  color: white;
   font-weight: bold;
 }
 
-/* Адаптивность для малых экранов */
-@media (max-width: 678px) {
-  .titleSvg text {
-    font-size: 25px;
-  }
-
-  .wheel {
-   
-    stroke: #F8FBC8;
-    position: absolute;
-    left: 5%;
-    top:30%;
-    width: 110px;
-    height: 110px;
-    transform-origin: center;
-    animation: rotate 5s ease-in-out;
-  }
+.authButton button:hover {
+  background: #e6b800;
 }
 
-
-
-
-
-/* Остальные стили... */
-@media (prefers-color-scheme: dark) {
-  .wheel {
-    fill: white; /* Цвет для темной темы */
+/* Мобільна навігація */
+@media (max-width: 768px) {
+  .navLinks {
+    display: none;
   }
-}
-
-@media (prefers-color-scheme: light) {
-  .wheel {
-    fill: black;
-    stroke: black; /* Цвет для темной темы */
-  }
-
-  
 }

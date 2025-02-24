@@ -3,37 +3,40 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
-/* Custom Variables for Ubuntu-HighSierra Theme */
+/* Custom Variables with Updated Color Scheme */
 :root {
-  --background: #362e40;
-  --foreground: #eceff4;
-  --primary-accent: #d08770; /* Ubuntu помаранчевий */
-  --secondary-accent: #005BBB; /* Синій акцент для деталей */
-  --highlight: #FFD500; /* Жовтий акцент для виділення */
-  --button-background: #3b4252;
-  --button-text: #eceff4;
-  --button-shadow: rgba(0, 0, 0, 0.3);
+  --background: #0f0e17; /* Dark Background */
+  --foreground: #fffffe; /* White Text */
+  --paragraph: #a7a9be; /* Paragraph Text */
+  --primary-accent: #ff8906; /* Orange Accent */
+  --secondary-accent: #a56d2e; /* Red Secondary */
+  --highlight: #ff8906; /* Orange Highlight */
+  --button-background: #774104; /* Orange Button */
+  --button-text: #fffffe; /* White Button Text */
+  --button-shadow: rgba(253, 211, 119, 0.699); /* Orange Shadow */
 }
 
 /* Main Content Styles */
 body {
-  @apply bg-[var(--background)] text-[var(--foreground)] font-sans flex flex-col;
+  @apply bg-[var(--background)] text-[var(--paragraph)] font-sans flex flex-col;
 }
 
 h1, h2, h3 {
   @apply text-[var(--primary-accent)];
 }
-
+ul,li{
+  @apply text-[var(--foreground)];
+  box-shadow: 0 4px 10px var(--button-shadow);
+}
 button {
   @apply px-4 py-2 rounded bg-[var(--button-background)] text-[var(--button-text)];
-  box-shadow: 0 4px 10px var(--button-shadow);
+  box-shadow: 0 4px 10px var(--button-shadow), inset 0 0 4px var(--button-shadow);
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 button:hover {
-  background-color: var(--primary-accent);
+  background-color: var(--secondary-accent);
+  box-shadow: 0 4px 10px var(--button-shadow), inset 0 0 40px var(--button-shadow);
   transform: scale(1.05);
 }
 
@@ -45,7 +48,60 @@ button:hover {
 
 /* Swiper Wrapper Transition */
 .swiper-wrapper {
-
   transition-timing-function: ease-in-out !important;
 }
+/* Прибираємо білі бордери навколо клітинок */
+.fc-daygrid-day {
+  border: none !important; /* Вимикаємо зайві рамки */
+  outline: none !important;
+}
 
+/* Видаляємо зайві рамки в усіх клітинках */
+.fc-daygrid-day-frame {
+  box-shadow: 0 4px 10px rgba(204, 162, 24, 0.699);
+
+  border: none !important;
+  outline: none !important;
+}
+
+/* Очищення бордерів між днями */
+.fc-scrollgrid {
+  border: none !important;
+}
+
+/* Очищення бордерів між хедерами (днями тижня) */
+.fc-col-header {
+  border-bottom: none !important;
+}
+
+/* Очищення бордерів між рядками */
+.fc-scrollgrid-section {
+  border: none !important;
+}
+
+/* Прибираємо зайві лінії в таблиці */
+.fc-theme-standard td, 
+.fc-theme-standard th {
+  border: none !important;
+}
+
+/* Додатково: налаштовуємо рівномірне вирівнювання */
+.fc-daygrid-day-number {
+  padding: 8px;
+  font-weight: bold;
+}
+
+/* Темний фон для всіх клітинок */
+.fc-daygrid-day {
+  background: linear-gradient(145deg, #3a3746, #26232f);
+  border-radius: 8px;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(60, 60, 80, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+/* Наведення на день */
+.fc-daygrid-day:hover {
+  transform: scale(1.02);
+  background: linear-gradient(145deg, #46434e, #33303a);
+  box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.4), -6px -6px 12px rgba(60, 60, 80, 0.2);
+}
