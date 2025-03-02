@@ -1,95 +1,117 @@
-// src/components/TimeGrid.tsx
-
 import React, { useEffect, useState } from "react";
-import { Appointment } from "../../types/Appointment";
+import classNames from "classnames";
 import styles from "./TimeGrid.module.css";
 
-interface Slot {
-  time: string; // ISO time string
-  isOccupied: boolean;
-}
+interface SlotGroup {
+  startTime: string;
+  endTime: string;
 
 interface TimeGridProps {
-  date: string; // Дата, яку обрав користувач
-  vehicleType: string; 
-  appointments: Appointment[];// Тип авто
-  onSlotSelect: (startTime: string, endTime: string) => void; 
-  onTimeSelect: (time: string) => void;// Callback для обробки вибору
+  date: string;
+  vehicleType: string;
+  appointments: { dateTime: string }[];
+  onSlotSelect: (startTime: string, endTime: string) => void;
 }
 
-const TimeGrid: React.FC<TimeGridProps> = ({ date, vehicleType, onSlotSelect }) => {
-  const [slots, setSlots] = useState<Slot[]>([]);
+const VEHICLE_DURATION: Record<string, number> = {
+  SMALL_CAR: 45,
+  SUV: 60,
+  TRUCK: 75,
+  DEFAULT: 45,
+};
+const TIME_FORMAT_OPTIONS = { hour: "2-digit", minute: "2-digit" };
+
+const TimeGrid: React.FC<TimeGridProps> = ({ date, vehicleType, appointments, onSlotSelect }) => {
+  const [slotGroups, setSlotGroups] = useState<SlotGroup[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
+  const bookedTimes = useMemo(() => {
+    return new Set(appointments.map((appt) => new Date(appt.dateTime).getTime()));
+  }, [appointments]);
+
   useEffect(() => {
-    const fetchSlots = async () => {
-      try {
-        const response = await fetch(`/api/timeslots?date=${date}&vehicleType=${vehicleType}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch time slots");
-        }
-        const data = await response.json();
-        setSlots(data.slots);
-      } catch (error) {
-        console.error("Error fetching time slots:", error);
+    const fetchAvailableGroups = () => {
+      const duration = VEHICLE_DURATION[vehicleType] || VEHICLE_DURATION.DEFAULT;
+      const startTime = new Date(`${date}T07:00:00`);
+      const endTime = new Date(`${date}T15:45:00`);
+
+      const allSlots: Date[] = [];
+      for (let time = new Date(startTime); time < endTime; time.setMinutes(time.getMinutes() + 15)) {
+        allSlots.push(new Date(time));
       }
+
+      const bookedTimes = new Set(appointments.map((appt) => new Date(appt.dateTime).toISOString()));
+      let groupStart: Date | null = null;
+      let groupEnd: Date | null = null;
+
+      allSlots.forEach((slotISO, index) => {
+        const currentSlot = new Date(slotISO);
+        const isBooked = bookedTimes.has(slotISO);
+
+        if (!isBooked) {
+          if (!groupStart) {
+            groupStart = new Date(currentSlot);
+          }
+          groupEnd = new Date(currentSlot);
+        }
+
+        if ((isBooked || index === allSlots.length - 1) && groupStart && groupEnd) {
+        if ((isBooked || index === allSlots.length - 1) && groupStart && groupEnd) {
+          const groupDuration = (groupEnd.getTime() - groupStart.getTime()) / (60 * 1000);
+            availableGroups.push({
+              startTime: groupStart.toISOString(),
+              endTime: groupEnd.toISOString(),
+            });
+          }
+
+          groupStart = null;
+          groupEnd = null;
+        }
+      });
+        }
+      });
+
+      setSlotGroups(availableGroups);
     };
-    fetchSlots();
-  }, [date, vehicleType]);
 
-  const handleSlotClick = (slot: Slot) => {
-    if (slot.isOccupied) {
-      alert("This slot is already occupied.");
-      return;
-    }
+    fetchAvailableGroups();
+  }, [date, vehicleType, appointments]);
 
-    const duration = getSlotDuration(vehicleType);
-    const startTime = slot.time;
-    const endTime = calculateEndTime(slot.time, duration);
+  return (
+    <div className={styles.grid}>
+      {slotGroups.map((group, index) => (
+        <SlotGroupComponent
+          key={index}
+          className={classNames(styles.slotGroup, { [styles.selected]: selectedSlot === group.startTime })}
+          selectedSlot={selectedSlot}
+          onSlotSelect={onSlotSelect}
+          setSelectedSlot={setSelectedSlot}
+        />
+      ))}
+    </div>
+  );
+};
 
-    setSelectedSlot(startTime);
-    onSlotSelect(startTime, endTime); // Виклик колбека для вибору
-  };
+interface SlotGroupComponentProps {
+  group: SlotGroup;
+  selectedSlot: string | null;
+  onSlotSelect: (startTime: string, endTime: string) => void;
+  setSelectedSlot: React.Dispatch<React.SetStateAction<string | null>>;
+}
 
-  const renderSlots = () =>
-    slots.map((slot, index) => (
-      <div
-        key={index}
-        className={`${styles.slot} ${slot.isOccupied ? styles.occupied : styles.available} ${
-          selectedSlot === slot.time ? styles.selected : ""
-        }`}
-        onClick={() => handleSlotClick(slot)}
-      >
-        {new Date(slot.time).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })}
+const SlotGroupComponent: React.FC<SlotGroupComponentProps> = ({ group, selectedSlot, onSlotSelect, setSelectedSlot }) => {
+  return (
+    <div
+      className={`${styles.slotGroup} ${selectedSlot === group.startTime ? styles.selected : ""}`}
+      onClick={() => {
+        setSelectedSlot(group.startTime);
+        onSlotSelect(group.startTime, group.endTime);
+      }}
+      {new Date(group.startTime).toLocaleTimeString([], TIME_FORMAT_OPTIONS)} -{" "}
+      {new Date(group.endTime).toLocaleTimeString([], TIME_FORMAT_OPTIONS)}
       </div>
-    ));
-
-  return <div className={styles.grid}>{renderSlots()}</div>;
-};
-
-// Допоміжна функція для обчислення тривалості часу
-const getSlotDuration = (vehicleType: string): number => {
-  switch (vehicleType) {
-    case "SMALL_CAR":
-      return 45;
-    case "SUV":
-      return 60;
-    case "TRUCK":
-      return 75;
-    default:
-      return 45;
-  }
-};
-
-// Допоміжна функція для обчислення кінця слоту
-const calculateEndTime = (startTime: string, duration: number): string => {
-  const start = new Date(startTime);
-  const end = new Date(start.getTime() + duration * 60 * 1000);
-  return end.toISOString();
+  );
 };
 
 export default TimeGrid;
+
