@@ -1,54 +1,134 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { VehicleType } from "../types/VehicleType";
 import VehicleForm from "../components/forms/VehicleForm";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 interface Vehicle {
   licensePlate: string;
   model: string;
   vehicleType: VehicleType;
+  userId?: string;
 }
 
-interface GarageProps {
-  vehicles: Vehicle[];
-  onDelete: (licensePlate: string) => void;
-  onAdd: (vehicle: Vehicle) => void; // Пропс для додавання
-}
-
-const Garage: React.FC<GarageProps> = ({ vehicles, onDelete, onAdd }) => {
+const GarageSection: React.FC = () => {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<string | null>(null);
-
+  const [error, setError] = useState<string | null>(null);
   const tireData = [
     { name: "R14", description: "Small Cars", price: 70 },
     { name: "R16", description: "Medium Cars", price: 90 },
     { name: "R17+", description: "Large Vehicles", price: 120 },
   ];
+  
+
+  // Функція для отримання списку авто з сервера
+  const fetchVehicles = async () => {
+    try {
+      const token = await getFirebaseToken(); // Отримання токена
+  
+      const res = await fetch("/api/vehicles", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+  
+      const data = await res.json();
+      setVehicles(data);
+    } catch (err) {
+      setError("Failed to load vehicles.");
+      console.error(err);
+    }
+  };
+  
+
+  useEffect(() => {
+    fetchVehicles(); // Завантажуємо список авто при завантаженні сторінки
+  }, []);
+
+  useEffect(() => {
+    setError(null); // Скидуємо помилку при зміні списку авто
+  }, [vehicles]);
+
+  const handleAddVehicle = async (vehicle: Vehicle) => {
+    if (vehicles.some((v) => v.licensePlate === vehicle.licensePlate)) {
+      setError("Vehicle with this license plate already exists");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vehicle),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+
+      // Перевіряємо, чи є JSON у відповіді
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        data = vehicle;
+      }
+
+      setVehicles((prev) => [...prev, data]); // Оновлюємо список
+      setShowForm(false);
+    } catch (err) {
+      setError("Failed to add vehicle. Please try again.");
+      console.error(err);
+    }
+  };
 
   const confirmDelete = (licensePlate: string) => {
     setDeleteCandidate(licensePlate);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (deleteCandidate) {
-      onDelete(deleteCandidate);
+  }; 
+  
+  const handleDeleteConfirm = async () => {
+    if (!deleteCandidate) return;
+  
+    try {
+      const token = await getFirebaseToken(); // Отримуємо токен авторизації
+  
+      const res = await fetch(`/api/vehicles?licensePlate=${deleteCandidate}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+  
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+  
+      setVehicles((prev) => prev.filter((v) => v.licensePlate !== deleteCandidate));
       setDeleteCandidate(null);
+    } catch (err) {
+      setError("Failed to delete vehicle.");
+      console.error(err);
     }
   };
+  
 
   const handleDeleteCancel = () => {
     setDeleteCandidate(null);
   };
 
-  const handleAddVehicle = (vehicle: Vehicle) => {
-    onAdd(vehicle); // Викликаємо пропс для додавання транспортного засобу
-    setShowForm(false); // Закриваємо форму після успіху
-  };
-
   return (
     <div className="p-4 max-w-4xl mx-auto bg-[var(--background)] text-[var(--foreground)] rounded shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Your Garage</h2>
+
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
       {vehicles.length < 5 && !showForm && (
         <button
@@ -62,8 +142,8 @@ const Garage: React.FC<GarageProps> = ({ vehicles, onDelete, onAdd }) => {
       {showForm && (
         <VehicleForm
           tireData={tireData}
-          onSubmit={handleAddVehicle} // Передаємо логіку додавання
-          onCancel={() => setShowForm(false)} // Закриття форми
+          onSubmit={handleAddVehicle}
+          onCancel={() => setShowForm(false)}
           heading="Add New Vehicle"
           submitButtonLabel="Save Vehicle"
         />
@@ -100,14 +180,11 @@ const Garage: React.FC<GarageProps> = ({ vehicles, onDelete, onAdd }) => {
         <p className="text-gray-500 text-center mt-4">No vehicles added yet.</p>
       )}
 
-      {/* Модальне вікно для підтвердження видалення */}
       {deleteCandidate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-[var(--background)] text-[var(--foreground)] p-6 rounded shadow-lg max-w-sm mx-auto">
             <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
-            <p className="mb-4">
-              Are you sure you want to delete this vehicle?
-            </p>
+            <p className="mb-4">Are you sure you want to delete this vehicle?</p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={handleDeleteConfirm}
@@ -129,5 +206,19 @@ const Garage: React.FC<GarageProps> = ({ vehicles, onDelete, onAdd }) => {
   );
 };
 
-export default Garage;
+export default GarageSection;
+async function getFirebaseToken(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        user.getIdToken()
+          .then((token) => resolve(token))
+          .catch((error) => reject(error));
+      } else {
+        reject(new Error("No user is signed in"));
+      }
+    });
+  });
+}
 

@@ -1,85 +1,57 @@
+// src/app/api/timeslots/route.ts
 import { NextResponse } from "next/server";
 import { addMinutes, parseISO, formatISO } from "date-fns";
 import prisma from "../../lib/db";
 
+const VEHICLE_SLOTS: Record<string, number> = {
+  SMALL_CAR: 3, // 45 хв = 3 слоти по 15 хв
+  SUV: 4,       // 60 хв = 4 слоти по 15 хв
+  TRUCK: 5,     // 75 хв = 5 слотів по 15 хв
+};
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const date = searchParams.get("date");
+    const date = searchParams.get("date")?.trim();
 
     if (!date) {
       return NextResponse.json({ error: "Date is required." }, { status: 400 });
     }
 
-    // Парсимо дату та створюємо часовий діапазон
-    const startDate = parseISO(`${date.trim()}T07:00:00`);
-    const endDate = parseISO(`${date.trim()}T15:45:00`);
+    const startDate = parseISO(`${date}T07:00:00`);
+    const endDate = parseISO(`${date}T15:45:00`);
 
     // Генеруємо всі 15-хвилинні слоти
-    const allSlots: string[] = [];
-    for (let time = startDate; time < endDate; time = addMinutes(time, 15)) {
-      allSlots.push(formatISO(time));
-    }
+    const allSlots = Array.from(
+      { length: (endDate.getTime() - startDate.getTime()) / (15 * 60 * 1000) },
+      (_, i) => formatISO(addMinutes(startDate, i * 15))
+    );
 
-    // Отримуємо підтверджені записи для дня
+    // Отримуємо підтверджені записи з бази
     const appointments = await prisma.appointment.findMany({
       where: {
-        dateTime: {
-          gte: startDate,
-          lt: endDate,
-        },
+        dateTime: { gte: startDate, lt: endDate },
         status: "CONFIRMED",
       },
       include: { vehicle: true },
     });
 
-    // Якщо записів немає, повертаємо всі слоти як доступні
-    if (!appointments || appointments.length === 0) {
-      return NextResponse.json({
-        slots: allSlots.map((slot) => ({
-          time: slot,
-          isOccupied: false,
-        })),
-      });
-    }
+    const occupiedSlots = new Set<string>();
 
-    // Вираховуємо зайняті слоти
-    const blockedSlots = new Set<string>();
-    appointments.forEach((appointment) => {
-      const duration = getDuration(appointment.vehicle.vehicleType);
-      let time = new Date(appointment.dateTime);
-      for (let i = 0; i < duration / 15; i++) {
-        blockedSlots.add(formatISO(time));
+    // Проходимо по всіх записах і додаємо зайняті слоти у `occupiedSlots`
+    appointments.forEach(({ dateTime, vehicle }) => {
+      const durationSlots = VEHICLE_SLOTS[vehicle.vehicleType] || 3;
+      let time = new Date(dateTime);
+
+      for (let i = 0; i < durationSlots; i++) {
+        occupiedSlots.add(formatISO(time));
         time = addMinutes(time, 15);
       }
     });
-
-    // Маркуємо слоти як зайняті або вільні
-    const slots = allSlots.map((slot) => ({
-      time: slot,
-      isOccupied: blockedSlots.has(slot),
-    }));
-
-    return NextResponse.json({ slots });
+    console.log("API RESPONSE", occupiedSlots);
+    return NextResponse.json({ occupiedSlots: Array.from(occupiedSlots) });
   } catch (error) {
-    console.error("Error fetching daily occupancy:", error);
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
-  }
-}
-
-// Допоміжна функція для визначення тривалості
-function getDuration(vehicleType: string): number {
-  switch (vehicleType) {
-    case "SMALL_CAR":
-      return 45;
-    case "SUV":
-      return 60;
-    case "TRUCK":
-      return 75;
-    default:
-      return 45;
+    console.error("Error fetching timeslots:", error);
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

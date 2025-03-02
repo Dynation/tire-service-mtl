@@ -99,10 +99,16 @@ export async function POST(req: NextRequest) {
 
 // DELETE: Видалення транспортного засобу
 export async function DELETE(req: NextRequest) {
-  logRequest(req);
+  logRequest(req); // Лог запиту
 
   try {
     const session = await getAuthenticatedSession(req);
+    console.log("Authenticated session:", session);
+
+    if (!session?.uid) {
+      return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const licensePlate = searchParams.get("licensePlate");
 
@@ -110,6 +116,19 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "License plate is required" }, { status: 400 });
     }
 
+    // Перевіряємо, чи авто належить цьому юзеру
+    const vehicle = await db.vehicle.findFirst({
+      where: { 
+        licensePlate,
+        userId: session.uid,
+      },
+    });
+
+    if (!vehicle) {
+      return NextResponse.json({ error: "Vehicle not found or unauthorized" }, { status: 404 });
+    }
+
+    // Перевіряємо, чи є активні записи
     const hasActiveAppointments = await db.appointment.findFirst({
       where: {
         licensePlate,
@@ -125,17 +144,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const vehicle = await db.vehicle.findFirst({
-      where: { 
-        licensePlate,
-        userId: session.uid
-      },
-    });
-
-    if (!vehicle) {
-      return NextResponse.json({ error: "Vehicle not found or unauthorized" }, { status: 404 });
-    }
-
+    // Видаляємо авто
     await db.vehicle.delete({
       where: { licensePlate },
     });
@@ -147,3 +156,4 @@ export async function DELETE(req: NextRequest) {
     return handleError(error);
   }
 }
+

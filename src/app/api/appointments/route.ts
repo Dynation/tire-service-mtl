@@ -5,7 +5,6 @@ import sanitizeHtml from "sanitize-html";
 import db from "../../lib/db"; // Prisma клієнт
 import { ServiceType } from "@prisma/client";
 
-
 // Функція для перевірки автентифікації користувача
 async function getAuthenticatedUser(req: NextRequest) {
   const authHeader = req.headers.get("Authorization");
@@ -25,19 +24,18 @@ export async function GET(req: NextRequest) {
   try {
     const userId = await getAuthenticatedUser(req);
 
-    const url = new URL(req.url);
-    const userQuery = url.searchParams.get("userId");
-
-    if (userId !== userQuery) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
     const appointments = await db.appointment.findMany({
-      where: { userId },
       include: {
-        vehicle: true, // Повертаємо інформацію про транспортний засіб
+        vehicle: true,
+      },
+      orderBy: {
+        dateTime: 'asc',
       },
     });
+
+    if (!appointments) {
+      throw new Error("No appointments found");
+    }
 
     return NextResponse.json(appointments);
   } catch (error) {
@@ -125,7 +123,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
 
 // DELETE: Видалення запису
 export async function DELETE(req: NextRequest) {

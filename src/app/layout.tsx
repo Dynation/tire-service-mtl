@@ -6,6 +6,7 @@ import Footer from "./layout/Footer";
 import "./globals.css";
 import localFont from "next/font/local";
 import { AuthProvider } from "../app/context/AuthContext"; 
+import Head from "next/head";
 
 // Подключение локальных шрифтов
 const geistSans = localFont({
@@ -25,6 +26,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <>      
+    <Head>
+    <link
+      rel="preload"
+      href="/_next/static/media/4473ecc91f70f139-s.p.woff"
+      as="font"
+      type="font/woff"
+      crossOrigin="anonymous"
+    />
+  </Head>
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
@@ -34,5 +45,6 @@ export default function RootLayout({
         </AuthProvider>
       </body>
     </html>
+    </>
   );
 }

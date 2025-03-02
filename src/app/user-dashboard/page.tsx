@@ -1,50 +1,59 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import useFetchUser from "../hooks/useFetchUser";
 import GarageSection from "../components/GarageSection";
-import YourAppointments from "../components/YourAppointments";
 import AppointmentSection from "../components/AppointmentSection";
 import NotAuthenticated from "../components/NotAuthenticated";
 import { Vehicle } from "../types/Vehicle";
 import { Appointment } from "../types/Appointment";
 
+/**
+ * UserDashboard Component
+ * 
+ * A dashboard interface for authenticated users that displays and manages their vehicles and appointments.
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <UserDashboard />
+ * ```
+ * 
+ * @remarks
+ * The component handles:
+ * - Fetching and displaying user's vehicles
+ * - Managing vehicle deletion
+ * - Managing vehicle addition
+ * - Fetching user's appointments
+ * - Authentication state checking
+ * 
+ * @state
+ * - vehicles: Vehicle[] - List of user's vehicles
+ * - appointments: Appointment[] - List of user's appointments
+ * - loading: boolean - Loading state for initial data fetch
+ * - deleteLoading: boolean - Loading state for vehicle deletion
+ * 
+ * @hooks
+ * - useFetchUser - Custom hook for fetching user data
+ * - useCallback - For memoizing fetch functions
+ * - useEffect - For initial data loading
+ * 
+ * @returns
+ * - Loading indicator when data is being fetched
+ * - NotAuthenticated component when user is not authenticated
+ * - Dashboard layout with GarageSection and AppointmentSection when authenticated
+ */
 const UserDashboard: React.FC = () => {
-  const user = useFetchUser(); // Хук для отримання користувача
+  const user = useFetchUser();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
-  // Отримання записів користувача
-  const fetchAppointments = React.useCallback(async () => {
-    try {
-      const response = await fetch(`/api/appointments?userId=${user?.uid}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch appointments");
-      }
-
-      const data = await response.json();
-      setAppointments(data);
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
+  const fetchVehicles = useCallback(async () => {
+    if (!user?.uid) {
+      return;
     }
-  }, [user]);
-
-  // Завантаження транспортних засобів
-  useEffect(() => {
-    if (user) {
-      fetchVehicles();
-      fetchAppointments(); // Завантаження записів одразу після авторизації
-    }
-  }, [user, fetchAppointments]);
-
-  // Отримання транспортних засобів
-  const fetchVehicles = async () => {
     try {
       const response = await fetch("/api/vehicles", {
         headers: {
@@ -63,10 +72,32 @@ const UserDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.uid]);
 
-  // Видалення транспортного засобу
+  const fetchAppointments = useCallback(async () => {
+    if (!user?.uid) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/appointments?userId=${user.uid}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch appointments");
+      }
+
+      const data = await response.json();
+      setAppointments(data);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+    }
+  }, [user?.uid]);
+
   const handleDeleteVehicle = async (licensePlate: string) => {
+    setDeleteLoading(true);
     try {
       const response = await fetch(`/api/vehicles?licensePlate=${licensePlate}`, {
         method: "DELETE",
@@ -84,15 +115,20 @@ const UserDashboard: React.FC = () => {
     } catch (error) {
       console.error("Error deleting vehicle:", error);
       alert("Failed to delete vehicle");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  if (!user) {
-    return <NotAuthenticated />;
-  }
+  useEffect(() => {
+    if (user) {
+      fetchVehicles();
+      fetchAppointments();
+    }
+  }, [user, fetchVehicles, fetchAppointments]);
 
-  if (loading) {
-    return <p>Loading...</p>;
+  if (loading || !user) {
+    return loading ? <p>Loading...</p> : <NotAuthenticated />;
   }
 
   return (
@@ -100,23 +136,16 @@ const UserDashboard: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">
         Welcome, {user.displayName || "User"}!
       </h1>
-
-      <GarageSection
-        vehicles={vehicles}
-        onDelete={handleDeleteVehicle}
-        onAdd={(vehicle) => setVehicles((prev) => [...prev, { ...vehicle, userId: user.uid }])}
-      />
-      <YourAppointments
-        userId={user.uid}
-        appointments={appointments} // Передаємо записи в компонент
-      />
+      <GarageSection/>
       <AppointmentSection
         userId={user.uid}
         vehicles={vehicles}
-        refreshAppointments={fetchAppointments} // Передаємо функцію для оновлення записів
+        refreshAppointments={fetchAppointments}
       />
     </div>
   );
 };
+
+
 
 export default UserDashboard;

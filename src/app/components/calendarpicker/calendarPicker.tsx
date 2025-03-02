@@ -4,36 +4,77 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
-
-import { Appointment } from "../../types/Appointment";
+import { VehicleType} from "../../types/VehicleType";
 import styles from "./CalendarPicker.module.css";
 
-// Removed redundant local Appointment interface
-
-export interface CalendarPickerProps {
-  appointments: Appointment[];
-  onDateSelect: (date: string) => void;
+interface CalendarPickerProps {
+  appointments: {
+    date: string;
+    time: string;
+    id: string;
+    dateTime: string;
+    type:  "TIRE"|"REPAIR";
+    status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+    licensePlate: string;
+    vehicleType: VehicleType;
+    vehicleId: string;
+    notes: string | null;
+  }[];
+  onDateSelect: (date: string) => Promise<void>;
   vehicleType: string;
-  selectedDate: string | null; 
+  selectedDate: string | null;
 }
 
-const CalendarPicker: React.FC<CalendarPickerProps> = ({
-  appointments = [],
-  onDateSelect,
-}) => {
+export interface Appointment {
+  id: string;
+  dateTime: string;
+  type: "TIRE_ROTATION"; // Change to match the expected type
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  licensePlate: string;
+  vehicleType: VehicleType;
+  vehicleId: string;
+  notes: string | null;
+}
+
+const CalendarPicker: React.FC<CalendarPickerProps> = ({ appointments, onDateSelect }) => {
   const [events, setEvents] = useState<EventInput[]>([]);
+  const [disabledDays, setDisabledDays] = useState<string[]>([]);
 
   useEffect(() => {
-    const formattedEvents = appointments.map((appt) => ({
-      title: `${new Date(appt.dateTime).toLocaleTimeString()} (${appt.type})`,
-      start: appt.dateTime,
-      allDay: false,
-    }));
+    const formattedEvents = appointments.map((appt) => {
+      const date = new Date(appt.dateTime);
+      const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      const formattedDate = localDate.toISOString().split(':00.000')[0];
+      
+      return {
+      title: formattedDate,
+      start: formattedDate,
+      allDay: true,
+      };
+    });
 
     setEvents(formattedEvents);
   }, [appointments]);
 
+  useEffect(() => {
+    // Визначаємо дати, які мають 100% зайняті слоти
+    const groupedByDate: Record<string, number> = {};
+
+    appointments.forEach((appt) => {
+      const dateKey = new Date(appt.dateTime).toISOString().split("T")[0];
+      groupedByDate[dateKey] = (groupedByDate[dateKey] || 0) + 1;
+    });
+
+    // Припускаємо, що день заповнений, якщо >= 32 записів (8 годин * 4 слоти/год)
+    const fullDays = Object.entries(groupedByDate)
+      .filter(([, count]) => count >= 32)
+      .map(([date]) => date);
+
+    setDisabledDays(fullDays);
+  }, [appointments]);
+
   const handleDateClick = (info: { dateStr: string }) => {
+    if (disabledDays.includes(info.dateStr)) return; // Забороняємо вибір
     onDateSelect(info.dateStr);
   };
 
@@ -48,10 +89,15 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({
         events={events}
         dateClick={handleDateClick}
         selectable
+        validRange={{
+          start: new Date().toISOString().split("T")[0], // Не дає вибрати минулі дні
+        }}
+        dayCellClassNames={({ date }) =>
+          disabledDays.includes(date.toISOString().split("T")[0]) ? styles.disabledDay : ""
+        }
       />
     </div>
   );
 };
 
 export default CalendarPicker;
-

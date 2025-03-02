@@ -1,31 +1,72 @@
 .calendarContainer {
-  @apply bg-[var(--background)] text-[var(--foreground)] p-4 rounded-lg shadow-lg;
+  background-color: var(--background);
+  color: var(--foreground);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .fc {
-  @apply text-[var(--foreground)] font-sans;
+  color: var(--foreground);
+  font-family: sans-serif;
 }
 
 .fc-daygrid-day {
-  @apply bg-transparent border border-[rgba(255,255,255,0.2)] rounded-lg hover:bg-[var(--primary-accent)] transition duration-200;
+  background-color: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.fc-daygrid-day:hover {
+  background-color: var(--primary-accent);
 }
 
 .fc-daygrid-day-number {
-  @apply text-[var(--foreground)] font-bold text-center;
+  color: var(--foreground);
+  font-weight: bold;
+  text-align: center;
 }
 
 .fc-event {
-  @apply bg-[var(--highlight)] text-[var(--foreground)] px-2 py-1 rounded-lg shadow-sm hover:shadow-md transition duration-200;
+  background-color: var(--highlight);
+  color: var(--foreground);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s;
+}
+
+.fc-event:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .fc-toolbar {
-  @apply mb-4 flex justify-between items-center text-[var(--foreground)];
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--foreground);
 }
 
 .fc-toolbar-title {
-  @apply text-xl font-bold;
+  font-size: 1.25rem;
+  font-weight: bold;
 }
 
 .fc-button {
-  @apply bg-[var(--primary-accent)] text-[var(--foreground)] px-4 py-2 rounded-lg transition duration-200 hover:bg-[var(--secondary-accent)];
+  background-color: var(--primary-accent);
+  color: var(--foreground);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.fc-button:hover {
+  background-color: var(--secondary-accent);
+}
+.disabledDay {
+  background-color: #ccc !important;
+  pointer-events: none;
+  opacity: 0.6;
 }

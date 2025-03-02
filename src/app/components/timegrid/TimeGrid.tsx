@@ -1,117 +1,94 @@
-import React, { useEffect, useState } from "react";
-import classNames from "classnames";
+import React, { useEffect, useState, useCallback } from "react";
 import styles from "./TimeGrid.module.css";
-
+import { VehicleType } from "../../types/VehicleType";
+import { isEqual, parseISO } from "date-fns";
 interface SlotGroup {
   startTime: string;
   endTime: string;
+}
 
 interface TimeGridProps {
   date: string;
-  vehicleType: string;
-  appointments: { dateTime: string }[];
+  vehicleType: VehicleType;
   onSlotSelect: (startTime: string, endTime: string) => void;
 }
 
-const VEHICLE_DURATION: Record<string, number> = {
-  SMALL_CAR: 45,
-  SUV: 60,
-  TRUCK: 75,
-  DEFAULT: 45,
+const VEHICLE_SLOTS: Record<VehicleType, number> = {
+  SMALL_CAR: 3,
+  SUV: 4,
+  TRUCK: 5,
 };
-const TIME_FORMAT_OPTIONS = { hour: "2-digit", minute: "2-digit" };
 
-const TimeGrid: React.FC<TimeGridProps> = ({ date, vehicleType, appointments, onSlotSelect }) => {
+const TimeGrid: React.FC<TimeGridProps> = ({ date, vehicleType, onSlotSelect }) => {
+  const [occupiedSlots, setOccupiedSlots] = useState<string[]>([]);
   const [slotGroups, setSlotGroups] = useState<SlotGroup[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
-  const bookedTimes = useMemo(() => {
-    return new Set(appointments.map((appt) => new Date(appt.dateTime).getTime()));
-  }, [appointments]);
+  const fetchOccupiedSlots = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/timeslots?date=${date}`);
+      if (!response.ok) throw new Error("Failed to fetch timeslots");
+
+      const data = await response.json();
+      console.log("API RESPONSE", data);
+      setOccupiedSlots(data.occupiedSlots);
+    } catch (error) {
+      console.error("Error fetching occupied slots:", error);
+    }
+  }, [date]);
+  useEffect(() => {
+    fetchOccupiedSlots();
+  }, [fetchOccupiedSlots]);
 
   useEffect(() => {
-    const fetchAvailableGroups = () => {
-      const duration = VEHICLE_DURATION[vehicleType] || VEHICLE_DURATION.DEFAULT;
-      const startTime = new Date(`${date}T07:00:00`);
-      const endTime = new Date(`${date}T15:45:00`);
+    const requiredSlots = VEHICLE_SLOTS[vehicleType] || 3;
+    const startTime = new Date(`${date}T07:00:00`);
+    const endTime = new Date(`${date}T15:45:00`);
 
-      const allSlots: Date[] = [];
-      for (let time = new Date(startTime); time < endTime; time.setMinutes(time.getMinutes() + 15)) {
-        allSlots.push(new Date(time));
+    const allSlots: Date[] = [];
+    for (let time = new Date(startTime); time < endTime; time.setMinutes(time.getMinutes() + 15)) {
+      allSlots.push(new Date(time));
+    }
+
+    const occupiedSet = new Set(occupiedSlots);
+console.log("occupiedSet", occupiedSet);
+    const availableGroups: SlotGroup[] = [];
+
+    for (let i = 0; i <= allSlots.length - requiredSlots; i++) {
+      const possibleGroup = allSlots.slice(i, i + requiredSlots);
+
+      if (possibleGroup.some(slot => Array.from(occupiedSet).some(occupied => isEqual(slot, parseISO(occupied))))) {
+        continue;
       }
 
-      const bookedTimes = new Set(appointments.map((appt) => new Date(appt.dateTime).toISOString()));
-      let groupStart: Date | null = null;
-      let groupEnd: Date | null = null;
-
-      allSlots.forEach((slotISO, index) => {
-        const currentSlot = new Date(slotISO);
-        const isBooked = bookedTimes.has(slotISO);
-
-        if (!isBooked) {
-          if (!groupStart) {
-            groupStart = new Date(currentSlot);
-          }
-          groupEnd = new Date(currentSlot);
-        }
-
-        if ((isBooked || index === allSlots.length - 1) && groupStart && groupEnd) {
-        if ((isBooked || index === allSlots.length - 1) && groupStart && groupEnd) {
-          const groupDuration = (groupEnd.getTime() - groupStart.getTime()) / (60 * 1000);
-            availableGroups.push({
-              startTime: groupStart.toISOString(),
-              endTime: groupEnd.toISOString(),
-            });
-          }
-
-          groupStart = null;
-          groupEnd = null;
-        }
-      });
-        }
+      availableGroups.push({
+        startTime: possibleGroup[0].toISOString(),
+        endTime: new Date(possibleGroup[possibleGroup.length - 1].getTime() + 15 * 60 * 1000).toISOString(),
       });
 
-      setSlotGroups(availableGroups);
-    };
+      i += requiredSlots - 1;
+    }
 
-    fetchAvailableGroups();
-  }, [date, vehicleType, appointments]);
+    setSlotGroups(availableGroups);
+  }, [occupiedSlots, vehicleType]);
 
   return (
     <div className={styles.grid}>
       {slotGroups.map((group, index) => (
-        <SlotGroupComponent
+        <div
           key={index}
-          className={classNames(styles.slotGroup, { [styles.selected]: selectedSlot === group.startTime })}
-          selectedSlot={selectedSlot}
-          onSlotSelect={onSlotSelect}
-          setSelectedSlot={setSelectedSlot}
-        />
+          className={`${styles.slotGroup} ${selectedSlot === group.startTime ? styles.selected : ""}`}
+          onClick={() => {
+            setSelectedSlot(group.startTime);
+            onSlotSelect(group.startTime, group.endTime);
+          }}
+        >
+          {new Date(group.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+          {new Date(group.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </div>
       ))}
     </div>
   );
 };
 
-interface SlotGroupComponentProps {
-  group: SlotGroup;
-  selectedSlot: string | null;
-  onSlotSelect: (startTime: string, endTime: string) => void;
-  setSelectedSlot: React.Dispatch<React.SetStateAction<string | null>>;
-}
-
-const SlotGroupComponent: React.FC<SlotGroupComponentProps> = ({ group, selectedSlot, onSlotSelect, setSelectedSlot }) => {
-  return (
-    <div
-      className={`${styles.slotGroup} ${selectedSlot === group.startTime ? styles.selected : ""}`}
-      onClick={() => {
-        setSelectedSlot(group.startTime);
-        onSlotSelect(group.startTime, group.endTime);
-      }}
-      {new Date(group.startTime).toLocaleTimeString([], TIME_FORMAT_OPTIONS)} -{" "}
-      {new Date(group.endTime).toLocaleTimeString([], TIME_FORMAT_OPTIONS)}
-      </div>
-  );
-};
-
 export default TimeGrid;
-

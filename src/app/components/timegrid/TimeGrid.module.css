@@ -1,43 +1,27 @@
-/* src/components/timegrid/TimeGrid.module.css */
-
 .grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr); /* Сітка 5 стовпців */
-    gap: 8px;
-    padding: 16px;
-    background-color: var(--background-secondary, #f4f4f4);
-    border-radius: 8px;
-  }
-  
-  .slot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    font-size: 14px;
-    text-align: center;
-    border: 1px solid var(--border, #ddd);
-    border-radius: 4px;
-    cursor: pointer;
-    background-color: var(--slot-available, #e8f5e9); /* Зелений для доступного */
-    color: var(--slot-text, #333);
-    transition: background-color 0.2s ease, transform 0.2s ease;
-  }
-  
-  .slot.occupied {
-    background-color: var(--slot-occupied, #fbe9e7); /* Червоний для зайнятого */
-    color: var(--slot-occupied-text, #999);
-    cursor: not-allowed;
-  }
-  
-  .slot.selected {
-    background-color: var(--slot-selected, #fff9c4); /* Жовтий для вибраного */
-    border-color: var(--slot-selected-border, #ffd54f);
-    transform: scale(1.05);
-  }
-  
-  .slot:hover:not(.occupied) {
-    background-color: var(--slot-hover, #c8e6c9); /* Світло-зелений для доступного при ховері */
-  }
-  
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: black;
+}
+
+.slotGroup {
+  padding: 10px;
+  border: 2px solid #4caf50;
+  background-color: #e8f5e9;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.slotGroup:hover {
+  background-color: #c8e6c9;
+}
+
+.selected {
+  background-color: #ffc107;
+  border-color: #ff9800;
+  font-weight: bold;
+}
+
   
