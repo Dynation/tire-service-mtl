@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-import { authMiddleware } from "./src/midlleware/auth";
+import { authMiddleware } from "./src/midlleware/authMidlleware";
 import { loggerMiddleware } from "./src/midlleware/logger";
 import { rateLimitMiddleware } from "./src/midlleware/rateLimit";
 
-export async function middleware(req: Request) {
+export async function middleware(req: NextRequest) {
   const response = NextResponse.next();
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');

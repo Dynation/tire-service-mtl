@@ -7,6 +7,7 @@ import AppointmentSection from "../components/AppointmentSection";
 import NotAuthenticated from "../components/NotAuthenticated";
 import { Vehicle } from "../types/Vehicle";
 import { Appointment } from "../types/Appointment";
+import Appointments from "../components/Appointments";
 
 /**
  * UserDashboard Component
@@ -51,20 +52,17 @@ const UserDashboard: React.FC = () => {
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
   const fetchVehicles = useCallback(async () => {
-    if (!user?.uid) {
-      return;
-    }
     try {
       const response = await fetch("/api/vehicles", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch vehicles");
       }
-
+  
       const data = await response.json();
       setVehicles(data);
     } catch (error) {
@@ -72,30 +70,31 @@ const UserDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.uid]);
+  }, []);
+  
 
   const fetchAppointments = useCallback(async () => {
     if (!user?.uid) {
       return;
     }
     try {
-      const response = await fetch(`/api/appointments?userId=${user.uid}`, {
+      const response = await fetch("/api/appointments", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch appointments");
       }
-
+  
       const data = await response.json();
       setAppointments(data);
     } catch (error) {
       console.error("Error fetching appointments:", error);
     }
-  }, [user?.uid]);
-
+  }, []);
+  
   const handleDeleteVehicle = async (licensePlate: string) => {
     setDeleteLoading(true);
     try {
@@ -136,13 +135,15 @@ const UserDashboard: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">
         Welcome, {user.displayName || "User"}!
       </h1>
-      <GarageSection/>
+      <GarageSection />
       <AppointmentSection
         userId={user.uid}
         vehicles={vehicles}
         refreshAppointments={fetchAppointments}
       />
+      <Appointments />
     </div>
+
   );
 };
 

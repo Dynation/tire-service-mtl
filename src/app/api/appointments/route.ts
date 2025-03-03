@@ -1,17 +1,16 @@
-//appointments/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { verifyServerToken } from "../../lib/firebaseAdmin"; // Імпорт функції верифікації
+import { cookies } from "next/headers";
+import { verifyServerToken } from "../../lib/firebaseAdmin";
 import sanitizeHtml from "sanitize-html";
 import db from "../../lib/db"; // Prisma клієнт
 import { ServiceType } from "@prisma/client";
 
-// Функція для перевірки автентифікації користувача
-async function getAuthenticatedUser(req: NextRequest) {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+async function getAuthenticatedUser() {
+  const token = (await cookies()).get("authToken")?.value;
+  if (!token) {
     throw new Error("Not authenticated");
   }
-  const token = authHeader.split("Bearer ")[1];
+
   const decodedToken = await verifyServerToken(token);
   if (!decodedToken) {
     throw new Error("Invalid token");
@@ -19,85 +18,44 @@ async function getAuthenticatedUser(req: NextRequest) {
   return decodedToken.uid;
 }
 
-// GET: Отримання записів для користувача
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getAuthenticatedUser(req);
-
+    const userId = await getAuthenticatedUser();
+    
     const appointments = await db.appointment.findMany({
-      include: {
-        vehicle: true,
-      },
-      orderBy: {
-        dateTime: 'asc',
-      },
+      where: { userId },
+      include: { vehicle: true },
+      orderBy: { dateTime: "asc" },
     });
-
-    if (!appointments) {
-      throw new Error("No appointments found");
-    }
 
     return NextResponse.json(appointments);
   } catch (error) {
     console.error("Error fetching appointments:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch appointments" },
-      { status: error instanceof Error && error.message === "Not authenticated" ? 401 : 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch appointments" }, { status: 401 });
   }
 }
 
-// POST: Створення нового запису
+
+// 🔹 POST: Створення нового запису
 export async function POST(req: NextRequest) {
   try {
-    // Отримуємо автентифікованого користувача
-    const userId = await getAuthenticatedUser(req);
-    if (!userId) {
-      throw new Error("Authentication required");
-    }
+    const userId = await getAuthenticatedUser();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Парсимо дані із запиту
     const { licensePlate, dateTime, type, notes } = await req.json();
 
-    // Валідація вхідних даних
-    if (!licensePlate || !dateTime || !type) {
-      return NextResponse.json(
-        { error: "Missing required fields: licensePlate, dateTime, or type" },
-        { status: 400 }
-      );
+    if (!licensePlate || !dateTime || !type || !(type in ServiceType)) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    // Перевіряємо, чи тип є допустимим
-    if (!Object.values(ServiceType).includes(type as ServiceType)) {
-      return NextResponse.json(
-        { error: `Invalid service type: ${type}` },
-        { status: 400 }
-      );
-    }
-
-    // Перевірка, чи запис вже існує
     const existingAppointment = await db.appointment.findFirst({
-      where: {
-        userId,
-        licensePlate,
-        dateTime: new Date(dateTime),
-      },
+      where: { userId, licensePlate, dateTime: new Date(dateTime) },
     });
 
     if (existingAppointment) {
-      return NextResponse.json(
-        { error: "Appointment already exists for this time and vehicle" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "Appointment already exists" }, { status: 409 });
     }
 
-    // Санітизуємо нотатки
-    const sanitizedNotes = sanitizeHtml(notes || "", {
-      allowedTags: [],
-      allowedAttributes: {},
-    });
-
-    // Створюємо запис
     const newAppointment = await db.appointment.create({
       data: {
         userId,
@@ -105,60 +63,46 @@ export async function POST(req: NextRequest) {
         dateTime: new Date(dateTime),
         type: type as ServiceType,
         status: "PENDING",
-        notes: sanitizedNotes || null,
+        notes: sanitizeHtml(notes || ""),
         cancelledByAdmin: false,
       },
     });
 
-    // Лог успішного створення
     console.log("Appointment created:", newAppointment);
-
-    // Повертаємо відповідь
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
     console.error("Failed to create appointment:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-// DELETE: Видалення запису
+// 🔹 DELETE: Видалення запису
 export async function DELETE(req: NextRequest) {
   try {
-    const userId = await getAuthenticatedUser(req);
+    const userId = await getAuthenticatedUser();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const appointmentId = searchParams.get("id");
-
-    if (!appointmentId) {
-      return NextResponse.json({ error: "Appointment ID is required" }, { status: 400 });
-    }
+    if (!appointmentId) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
     const appointment = await db.appointment.findFirst({
       where: { id: parseInt(appointmentId), userId },
     });
 
     if (!appointment) {
-      return NextResponse.json({ error: "Appointment not found or unauthorized" }, { status: 404 });
+      return NextResponse.json({ error: "Not found or unauthorized" }, { status: 404 });
     }
 
-    // Позначення запису як скасованого, а не видалення
     const updatedAppointment = await db.appointment.update({
       where: { id: parseInt(appointmentId) },
-      data: {
-        status: "CANCELLED",
-      },
+      data: { status: "CANCELLED" },
     });
 
     console.log("Appointment cancelled:", updatedAppointment);
-    return NextResponse.json({ message: "Appointment cancelled successfully" });
+    return NextResponse.json({ message: "Appointment cancelled" });
   } catch (error) {
     console.error("Failed to cancel appointment:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to cancel appointment" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -33,18 +33,13 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
     try {
       setLoading(true);
       setError(null);
-
-      const token = localStorage.getItem("authToken");
-      if (!token) throw new Error("User is not authenticated");
-
-      const response = await fetch(`/api/appointments?userId=${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  
+      const response = await fetch(`/api/appointments`, {
+        credentials: "include", // 🔹 ВАЖЛИВО! Додаємо cookies у запит
       });
-
+  
       if (!response.ok) throw new Error("Failed to fetch appointments");
-
+  
       const data: Appointment[] = await response.json();
       setAppointments(data);
     } catch (error) {
@@ -53,74 +48,71 @@ const AppointmentSection: React.FC<AppointmentSectionProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [userId]);
-
+  }, []);
+  
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments]);
-
+  
   // Коли користувач натискає на дату, але не вибрав авто
   const handleDateSelect = async (date: string) => {
     setSelectedDate(date);
-
+  
     if (!selectedVehicle) {
       setShowVehicleWarning(true);
       setTimeout(() => vehicleSelectRef.current?.focus(), 100);
     } else {
       setShowVehicleWarning(false);
     }
-
-    await refreshAppointments();
+  
+    await fetchAppointments(); // Оновлюємо список записів
   };
-
-
-const [isSubmitting, setIsSubmitting] = useState(false);
-const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-
-const handleSubmitAppointment = async () => {
-  if (!selectedTime || !selectedVehicle) {
-    alert("Please select a vehicle, date, and time.");
-    return;
-  }
-
-  try {
-    setIsSubmitting(true); // Блокуємо кнопку
-    const token = localStorage.getItem("authToken");
-    if (!token) throw new Error("User is not authenticated");
-
-    const newAppointment = {
-      dateTime: selectedTime,
-      type: "TIRE",
-      status: "PENDING",
-      licensePlate: selectedVehicle.licensePlate,
-      notes,
-    };
-
-    console.log("Submitting appointment:", newAppointment);
-
-    const response = await fetch("/api/appointments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(newAppointment),
-    });
-
-    if (!response.ok) throw new Error("Failed to create appointment");
-
-    setShowSuccessPopup(true); // Показуємо попап
-    setTimeout(() => setShowSuccessPopup(false), 3000); // Закриваємо через 3 сек
-
-  } catch (error) {
-    console.error("Error creating appointment:", error);
-    alert("Failed to create appointment");
-  } finally {
-    setIsSubmitting(false); // Розблоковуємо кнопку
-  }
-};
-
-
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  
+  const handleSubmitAppointment = async () => {
+    if (!selectedTime || !selectedVehicle) {
+      alert("Please select a vehicle, date, and time.");
+      return;
+    }
+  
+    try {
+      setIsSubmitting(true); // Блокуємо кнопку
+  
+      const newAppointment = {
+        dateTime: selectedTime,
+        type: "TIRE",
+        status: "PENDING",
+        licensePlate: selectedVehicle.licensePlate,
+        notes,
+      };
+  
+      console.log("Submitting appointment:", newAppointment);
+  
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // 🔹 Додаємо cookies у запит
+        body: JSON.stringify(newAppointment),
+      });
+  
+      if (!response.ok) throw new Error("Failed to create appointment");
+  
+      setShowSuccessPopup(true); // Показуємо попап
+      setTimeout(() => setShowSuccessPopup(false), 3000); // Закриваємо через 3 сек
+  
+      await fetchAppointments(); // Оновлюємо список після запису
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      alert("Failed to create appointment");
+    } finally {
+      setIsSubmitting(false); // Розблоковуємо кнопку
+    }
+  };
+  
   // Обробка вибору авто
   const handleVehicleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = vehicles.find((v) => v.licensePlate === e.target.value) || null;

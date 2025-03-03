@@ -1,15 +1,19 @@
 // src/app/api/vehicles/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { verifyServerToken } from "../../lib/firebaseAdmin"// імпорт
 import db from "../../../app/lib/db";
 import { logRequest } from "../../lib/apiUtils";
+
 async function getAuthenticatedSession(req: NextRequest) {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("authToken")?.value; // ✅ Отримуємо токен із cookies
+
+  if (!token) {
     throw new Error("Not authenticated");
   }
-  const token = authHeader.split("Bearer ")[1];
-  const decodedToken = await verifyServerToken(token); // Використовується verifyServerToken
+
+  const decodedToken = await verifyServerToken(token);
   if (!decodedToken) {
     throw new Error("Invalid token");
   }

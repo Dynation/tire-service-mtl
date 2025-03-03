@@ -7,7 +7,7 @@ const auth = getAuth();
 interface AuthContextProps {
   isAuthenticated: boolean;
   user: User | null;
-  signIn: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
@@ -21,9 +21,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         const token = await currentUser.getIdToken();
-        localStorage.setItem("authToken", token); // Зберігаємо токен
+
+        // Використовуємо cookies для збереження токена
+        await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        });
+        
+        // Перевіряємо, чи користувач успішно залогінився
         setUser(currentUser);
         setIsAuthenticated(true);
+        
 
         // Викликаємо API для створення користувача
         try {
@@ -58,32 +69,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => unsubscribe();
   }, []);
 
-  const signIn = async () => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
-
-      localStorage.setItem("authToken", token); // Зберігаємо токен після входу
-      setUser(result.user);
+      const response = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include", // 🔥 Передаємо cookies
+      });
+  
+      if (!response.ok) throw new Error("Failed to sign in");
+  
+      const { user } = await response.json();
+      setUser(user);
       setIsAuthenticated(true);
-
-      console.log("Успішний вхід! Токен збережено:", token);
     } catch (error) {
-      console.error("Помилка входу:", error);
+      console.error("Sign-in error:", error);
     }
   };
+  
 
   const signOutUser = async () => {
     try {
-      await auth.signOut();
-      localStorage.removeItem("authToken"); // Видаляємо токен при виході
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
+        credentials: "include", // 🔥 Передаємо cookies
+      });
+  
+      if (!response.ok) throw new Error("Failed to sign out");
+  
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
-      console.error("Помилка виходу:", error);
+      console.error("Sign-out error:", error);
     }
   };
+  
+  
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, signIn, signOutUser }}>

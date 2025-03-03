@@ -12,28 +12,18 @@ export default function useFetchUser() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          console.warn("Token not found in localStorage");
+        const response = await fetch("/api/auth/me", {
+          credentials: "include", // ✅ Додає `httpOnly` cookie автоматично!
+        });
+
+        if (!response.ok) {
+          console.warn(`Failed to fetch user: ${response.status}`);
           setUser(null);
           return;
         }
 
-        const response = await fetch("/api/auth/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Використовуємо токен
-          },
-        });
-
-        if (response.ok) {
-          const { user: fetchedUser } = await response.json();
-          setUser(fetchedUser || null);
-        } else {
-          console.warn(`Failed to fetch user: ${response.status}`);
-          setUser(null);
-        }
+        const { user: fetchedUser } = await response.json();
+        setUser(fetchedUser || null);
       } catch (error) {
         console.error("Error while fetching user:", error);
         setUser(null);

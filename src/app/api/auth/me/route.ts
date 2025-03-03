@@ -1,30 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import admin from "../../../lib/firebaseAdmin";
+import { cookies } from "next/headers";
+import { verifyServerToken } from "../../../lib/firebaseAdmin"; 
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get("authorization")?.split("Bearer ")[1];
-  console.log("Заголовок Authorization:", req.headers.get("authorization"));
-
-  if (!token) {
-    console.error("Токен відсутній у заголовку");
-    return NextResponse.json({ user: null }, { status: 401 });
-  }
-
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log("Розшифрований токен:", decodedToken);
+    // 🔹 Отримуємо токен з cookies
+    const token = (await cookies()).get("authToken")?.value;
+    if (!token) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
 
-    return NextResponse.json({
-      user: {
-        displayName: decodedToken.name || "User",
-        email: decodedToken.email,
-        uid: decodedToken.uid,
-      },
-    });
+    const decoded = await verifyServerToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    return NextResponse.json({ user: decoded });
   } catch (error) {
-    console.error("Помилка перевірки токена:", error);
-    return NextResponse.json({ user: null }, { status: 401 });
+    console.error("Auth check error:", error);
+    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
   }
 }
-
-//export const runtime = "edge"; // Опціонально, для покращення продуктивності

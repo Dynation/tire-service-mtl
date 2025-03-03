@@ -5,8 +5,8 @@ import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User 
 import auth from "../lib/firebaseAuth";
 import styles from "./Header.module.css";
 import { useMediaQuery } from "react-responsive";
-import { Home, Calendar, Car, User as UserIcon } from "lucide-react"; // ✅ Іконки для мобільного меню
-import Image from "next/image"; // ✅ Для коректного рендеру лого
+import { Home, Calendar, Car, User as UserIcon } from "lucide-react";
+import Image from "next/image";
 
 const Header: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +19,7 @@ const Header: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  async function handleSignIn() {
+  async function handleSignInGoogle() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
@@ -41,7 +41,7 @@ const Header: React.FC = () => {
       {!isMobile && (
         <header className={styles.header}>
           <div className={styles.wrapper}>
-            {/* 🔥 НОВЕ ЛОГО 🔥 */}
+            {/* 🔥 Лого */}
             <div className={styles.logoContainer}>
               <Image src="/images/wheel.svg" alt="Tire Logo" width={60} height={60} className={styles.logo} />
               <span className={styles.brand}>TIRE SERVICE MTL</span>
@@ -58,7 +58,9 @@ const Header: React.FC = () => {
             {/* 🔐 Авторизація */}
             <div className={styles.authButton}>
               {!user ? (
-                <button onClick={handleSignIn}>Вхід</button>
+                <>
+                  <button onClick={handleSignInGoogle} className="mr-2">Увійти через Google</button>
+                </>
               ) : (
                 <div className={styles.userInfo}>
                   <span>Привіт, {user.displayName || "Користувач"}</span>
@@ -72,7 +74,7 @@ const Header: React.FC = () => {
         </header>
       )}
 
-      {/* 🔥 Мобільна навігація знизу 🔥 */}
+      {/* 🏠 Мобільна навігація */}
       {isMobile && (
         <nav className="fixed bottom-0 left-0 w-full bg-gray-900 text-white flex justify-around py-2 shadow-xl">
           <Link href="/user-dashboard" className="flex flex-col items-center">
@@ -98,3 +100,4 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
