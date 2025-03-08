@@ -3,10 +3,11 @@
   flex-direction: column;
   gap: 5px;
   color: black;
+  background-color: #c8e6c9;
 }
 
 .slotGroup {
-  padding: 10px;
+  padding: 5px;
   border: 2px solid #4caf50;
   background-color: #e8f5e9;
   text-align: center;
@@ -18,10 +19,43 @@
   background-color: #c8e6c9;
 }
 
+.occupied {
+ 
+  background-color: #ca1205da;
+  border-color: #d32f2f;
+  color: rgb(33, 34, 25);
+}
+
+.free {
+  background-color: #316123;
+  border-color: #388e3c;
+  color: white;
+}
+
 .selected {
   background-color: #ffc107;
   border-color: #ff9800;
   font-weight: bold;
 }
 
-  
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border: 1px solid black;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+}

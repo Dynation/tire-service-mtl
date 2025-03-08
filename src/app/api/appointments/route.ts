@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { verifyServerToken } from "../../lib/firebaseAdmin";
 import sanitizeHtml from "sanitize-html";
 import db from "../../lib/db"; // Prisma клієнт
-import { ServiceType } from "@prisma/client";
+import { ServiceType, AppointmentStatus } from "@prisma/client";
 
 async function getAuthenticatedUser() {
   const token = (await cookies()).get("authToken")?.value;
@@ -21,10 +21,28 @@ async function getAuthenticatedUser() {
 export async function GET(req: NextRequest) {
   try {
     const userId = await getAuthenticatedUser();
-    
+    const url = new URL(req.url);
+    const date = url.searchParams.get("date");
+
+    // Якщо технік запитує розклад на день
+    if (date) {
+      const appointments = await db.appointment.findMany({
+        where: {
+          dateTime: {
+            gte: new Date(`${date}T00:00:00.000Z`),
+            lt: new Date(`${date}T23:59:59.999Z`),
+          },
+        },
+        include: { user: true },
+        orderBy: { dateTime: "asc" },
+      });
+
+      return NextResponse.json(appointments);
+    }
+
+    // Якщо звичайний юзер → повертаємо тільки його записи
     const appointments = await db.appointment.findMany({
       where: { userId },
-      include: { vehicle: true },
       orderBy: { dateTime: "asc" },
     });
 
@@ -35,16 +53,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-
 // 🔹 POST: Створення нового запису
 export async function POST(req: NextRequest) {
   try {
     const userId = await getAuthenticatedUser();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { licensePlate, dateTime, type, notes } = await req.json();
+    const { licensePlate, dateTime, type, notes, slotCount } = await req.json();
 
-    if (!licensePlate || !dateTime || !type || !(type in ServiceType)) {
+    if (!licensePlate || !dateTime || !type || !(type in ServiceType) || !slotCount) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
@@ -64,6 +81,7 @@ export async function POST(req: NextRequest) {
         type: type as ServiceType,
         status: "PENDING",
         notes: sanitizeHtml(notes || ""),
+        slotCount,
         cancelledByAdmin: false,
       },
     });
@@ -103,6 +121,37 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ message: "Appointment cancelled" });
   } catch (error) {
     console.error("Failed to cancel appointment:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+ // 🔹 PATCH: Оновлення статусу запису (технік підтверджує/завершує/скасовує)
+export async function PATCH(req: NextRequest) {
+  try {
+    const userId = await getAuthenticatedUser();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id, status } = await req.json();
+
+    if (!id || !status || !(status in AppointmentStatus)) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    }
+
+    const appointment = await db.appointment.findFirst({ where: { id } });
+    if (!appointment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (!["CONFIRMED", "CANCELLED", "COMPLETED"].includes(status)) {
+      return NextResponse.json({ error: "Unauthorized action" }, { status: 403 });
+    }
+
+    const updatedAppointment = await db.appointment.update({
+      where: { id },
+      data: { status },
+    });
+
+    return NextResponse.json(updatedAppointment);
+  } catch (error) {
+    console.error("Failed to update appointment:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

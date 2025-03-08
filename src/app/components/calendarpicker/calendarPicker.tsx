@@ -4,36 +4,22 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import momentTimezonePlugin from "@fullcalendar/moment-timezone";
 import { EventInput } from "@fullcalendar/core";
-import { VehicleType} from "../../types/VehicleType";
+import { VehicleType } from "../../types/VehicleType";
 import styles from "./CalendarPicker.module.css";
 
 interface CalendarPickerProps {
   appointments: {
-    date: string;
-    time: string;
-    id: string;
     dateTime: string;
-    type:  "TIRE"|"REPAIR";
+    id: string;
+    type: "TIRE_ROTATION" | "REPAIR_TIRE";
     status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
     licensePlate: string;
     vehicleType: VehicleType;
-    vehicleId: string;
     notes: string | null;
   }[];
   onDateSelect: (date: string) => Promise<void>;
   vehicleType: string;
   selectedDate: string | null;
-}
-
-export interface Appointment {
-  id: string;
-  dateTime: string;
-  type: "TIRE_ROTATION"; // Change to match the expected type
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
-  licensePlate: string;
-  vehicleType: VehicleType;
-  vehicleId: string;
-  notes: string | null;
 }
 
 const CalendarPicker: React.FC<CalendarPickerProps> = ({ appointments, onDateSelect }) => {
@@ -43,13 +29,13 @@ const CalendarPicker: React.FC<CalendarPickerProps> = ({ appointments, onDateSel
   useEffect(() => {
     const formattedEvents = appointments.map((appt) => {
       const date = new Date(appt.dateTime);
-      const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-      const formattedDate = localDate.toISOString().split(':00.000')[0];
+      const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      const formattedDate = localDate.toISOString().split(":00.000")[0];
       
       return {
-      title: formattedDate,
-      start: formattedDate,
-      allDay: true,
+        title: formattedDate,
+        start: formattedDate,
+        allDay: true,
       };
     });
 

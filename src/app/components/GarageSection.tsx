@@ -22,23 +22,23 @@ const GarageSection: React.FC = () => {
     { name: "R16", description: "Medium Cars", price: 90 },
     { name: "R17+", description: "Large Vehicles", price: 120 },
   ];
-  
+
 
   // Функція для отримання списку авто з сервера
   const fetchVehicles = async () => {
     try {
       const token = await getFirebaseToken(); // Отримання токена
-  
+
       const res = await fetch("/api/vehicles", {
         headers: {
           "Authorization": `Bearer ${token}`,
         },
       });
-  
+
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
-  
+
       const data = await res.json();
       setVehicles(data);
     } catch (err) {
@@ -46,7 +46,7 @@ const GarageSection: React.FC = () => {
       console.error(err);
     }
   };
-  
+
 
   useEffect(() => {
     fetchVehicles(); // Завантажуємо список авто при завантаженні сторінки
@@ -63,9 +63,14 @@ const GarageSection: React.FC = () => {
     }
 
     try {
+      const token = await getFirebaseToken();
+
       const res = await fetch("/api/vehicles", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ Додаємо авторизацію
+        },
         body: JSON.stringify(vehicle),
       });
 
@@ -73,16 +78,8 @@ const GarageSection: React.FC = () => {
         throw new Error(`Server error: ${res.status}`);
       }
 
-      // Перевіряємо, чи є JSON у відповіді
-      let data;
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        data = await res.json();
-      } else {
-        data = vehicle;
-      }
+      await fetchVehicles(); // ✅ Оновлюємо весь список після додавання
 
-      setVehicles((prev) => [...prev, data]); // Оновлюємо список
       setShowForm(false);
     } catch (err) {
       setError("Failed to add vehicle. Please try again.");
@@ -92,25 +89,25 @@ const GarageSection: React.FC = () => {
 
   const confirmDelete = (licensePlate: string) => {
     setDeleteCandidate(licensePlate);
-  }; 
-  
+  };
+
   const handleDeleteConfirm = async () => {
     if (!deleteCandidate) return;
-  
+
     try {
-      const token = await getFirebaseToken(); // Отримуємо токен авторизації
-  
-      const res = await fetch(`/api/vehicles?licensePlate=${deleteCandidate}`, {
+      const token = await getFirebaseToken();
+
+      const res = await fetch(`/api/vehicles`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          credentials: "include",
         },
       });
-  
+
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
-  
+
       setVehicles((prev) => prev.filter((v) => v.licensePlate !== deleteCandidate));
       setDeleteCandidate(null);
     } catch (err) {
@@ -118,7 +115,7 @@ const GarageSection: React.FC = () => {
       console.error(err);
     }
   };
-  
+
 
   const handleDeleteCancel = () => {
     setDeleteCandidate(null);

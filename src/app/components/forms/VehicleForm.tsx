@@ -51,18 +51,14 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
 
   const handleFormSubmit = async (values: typeof initialValues) => {
     console.log("Form values being submitted:", values); // Додаємо логування
+    
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("User is not authenticated");
-      }
-  
       const response = await fetch("/api/vehicles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify(values),
       });
   
@@ -171,19 +167,21 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
               >
                 Vehicle Type
               </label>
-              <Field
+                <Field
                 as="select"
                 id="vehicleType"
                 name="vehicleType"
                 className="w-full border border-gray-300 p-2 rounded bg-[var(--button-background)] text-[var(--button-text)]"
-              >
-                {Object.values(VehicleType).map((type) => (
+                >
+                {Object.values(VehicleType)
+                  .filter((type) => type !== "TWO_SLOTS" && type !== "ONE_SLOT")
+                  .map((type) => (
                   <option key={type} value={type}>
                     {type === "TRUCK"
-                      ? `${type} (includes premium SUVs)`
-                      : type.replace("_", " ")}
+                    ? `${type} (includes premium SUVs)`
+                    : type.replace("_", " ")}
                   </option>
-                ))}
+                  ))}
               </Field>
               <ErrorMessage
                 name="vehicleType"

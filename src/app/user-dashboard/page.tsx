@@ -49,14 +49,11 @@ const UserDashboard: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
   const fetchVehicles = useCallback(async () => {
     try {
       const response = await fetch("/api/vehicles", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
+        credentials: "include", // ✅ Використовуємо cookies
       });
   
       if (!response.ok) {
@@ -72,16 +69,13 @@ const UserDashboard: React.FC = () => {
     }
   }, []);
   
-
   const fetchAppointments = useCallback(async () => {
     if (!user?.uid) {
       return;
     }
     try {
       const response = await fetch("/api/appointments", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
+        credentials: "include", // ✅ Використовуємо cookies
       });
   
       if (!response.ok) {
@@ -95,29 +89,8 @@ const UserDashboard: React.FC = () => {
     }
   }, []);
   
-  const handleDeleteVehicle = async (licensePlate: string) => {
-    setDeleteLoading(true);
-    try {
-      const response = await fetch(`/api/vehicles?licensePlate=${licensePlate}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete vehicle");
-      }
-
-      setVehicles((prev) => prev.filter((v) => v.licensePlate !== licensePlate));
-      alert("Vehicle deleted successfully");
-    } catch (error) {
-      console.error("Error deleting vehicle:", error);
-      alert("Failed to delete vehicle");
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
+ 
+  
 
   useEffect(() => {
     if (user) {
@@ -133,9 +106,11 @@ const UserDashboard: React.FC = () => {
   return (
     <div className="dashboard p-4">
       <h1 className="text-3xl font-bold mb-6 text-center">
-        Welcome, {user.displayName || "User"}!
+      Welcome, {user?.displayName || "User"}!
       </h1>
-      <GarageSection />
+      <GarageSection 
+      
+      />
       <AppointmentSection
         userId={user.uid}
         vehicles={vehicles}

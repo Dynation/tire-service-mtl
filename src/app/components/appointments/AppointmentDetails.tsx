@@ -8,9 +8,8 @@ interface AppointmentDetailsProps {
   wheelCount: number;
   flatRun: boolean;
   lowProfile: boolean;
-  notes: string;
-  date: string;
-  time: string;
+  notes: string | null;
+  dateTime: string;
   onConfirm: () => void;
   onReappoint: () => void;
   onAddAppointment: () => void;
@@ -28,8 +27,7 @@ const AppointmentDetails: React.FC<AppointmentDetailsProps> = ({
   flatRun,
   lowProfile,
   notes,
-  date,
-  time,
+  dateTime,
   onConfirm,
   onReappoint,
   onAddAppointment,
@@ -50,8 +48,8 @@ const AppointmentDetails: React.FC<AppointmentDetailsProps> = ({
           <li><strong>Flat Run:</strong> {flatRun ? "Yes" : "No"}</li>
           <li><strong>Low Profile:</strong> {lowProfile ? "Yes" : "No"}</li>
           <li><strong>Notes:</strong> {notes}</li>
-          <li><strong>Date:</strong> {date}</li>
-          <li><strong>Time:</strong> {time}</li>
+          <li><strong>Date:</strong> {new Date(dateTime).toLocaleDateString()}</li>
+          <li><strong>Time:</strong> {new Date(dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</li>
         </ul>
       </div>
 

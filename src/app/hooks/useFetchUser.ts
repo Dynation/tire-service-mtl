@@ -4,6 +4,7 @@ interface User {
   uid: string;
   displayName: string | null;
   email: string;
+  picture?: string;
 }
 
 export default function useFetchUser() {
@@ -12,20 +13,14 @@ export default function useFetchUser() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include", // ✅ Додає `httpOnly` cookie автоматично!
-        });
+        const response = await fetch("/api/auth/me", { credentials: "include" });
+        if (!response.ok) throw new Error("Failed to fetch user");
 
-        if (!response.ok) {
-          console.warn(`Failed to fetch user: ${response.status}`);
-          setUser(null);
-          return;
-        }
-
-        const { user: fetchedUser } = await response.json();
-        setUser(fetchedUser || null);
+        const data = await response.json();
+        console.log("🔥 User fetched:", data); // ✅ Дебаг
+        setUser(data);
       } catch (error) {
-        console.error("Error while fetching user:", error);
+        console.error("❌ Error fetching user:", error);
         setUser(null);
       }
     };

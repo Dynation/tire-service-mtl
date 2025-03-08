@@ -5,7 +5,7 @@ import { verifyServerToken } from "../../lib/firebaseAdmin"// імпорт
 import db from "../../../app/lib/db";
 import { logRequest } from "../../lib/apiUtils";
 
-async function getAuthenticatedSession(req: NextRequest) {
+async function getAuthenticatedSession(_req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get("authToken")?.value; // ✅ Отримуємо токен із cookies
 

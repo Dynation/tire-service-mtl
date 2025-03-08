@@ -4,12 +4,10 @@ import React, { useEffect, useState } from "react";
 interface Appointment {
   id: number;
   dateTime: string;
-  type: string;
-  status: string;
-  vehicle: {
-    model: string;
-    licensePlate: string;
-  };
+  type: "TIRE_ROTATION" | "REPAIR_TIRE";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  licensePlate: string;
+  notes: string | null;
 }
 
 const Appointments: React.FC = () => {
@@ -98,7 +96,7 @@ const Appointments: React.FC = () => {
                 {new Date(appt.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </p>
               <p>
-                <strong>Vehicle:</strong> {appt.vehicle.model} ({appt.vehicle.licensePlate})
+                <strong>License Plate:</strong> {appt.licensePlate}
               </p>
               <p>
                 <strong>Type:</strong> {appt.type}

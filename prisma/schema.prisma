@@ -1,4 +1,4 @@
- generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -32,14 +32,14 @@ model Vehicle {
   lowProfile   Boolean                   // Чи низький профіль шин
 
   user         User     @relation(fields: [userId], references: [uid])
-  appointments Appointment[]
 }
 
+// Service model
 model Service {
   id             Int          @id @default(autoincrement())
   name           String       @db.VarChar(100)  // Назва послуги (наприклад, "Шиномонтаж")
   description    String       @db.VarChar(255) // Опис послуги
-  perTire        Float?       //  ціна за одне колесо --> ми планували давати на фронт обчислену ціну за 4 колеса, виходячи з цього поля ціни за одне колесо
+  perTire        Float?       // ціна за одне колесо --> ми планували давати на фронт обчислену ціну за 4 колеса
   flatRunCost    Float?       // Додаткова ціна за Flat Run
   lowProfileCost Float?       // Додаткова ціна за Low Profile
   vehicleType    VehicleType? // Тип транспортного засобу (опціонально, якщо послуга специфічна для типу авто)
@@ -48,6 +48,7 @@ model Service {
   updatedAt      DateTime     @updatedAt
 }
 
+// Referral model
 model Referral {
   id             Int       @id @default(autoincrement())
   referrerId     String    // UID користувача, який запросив
@@ -56,23 +57,25 @@ model Referral {
   createdAt      DateTime  @default(now())
 }
 
+// Completed Wheel Counter model
 model CompletedWheelCounter {
   id           Int       @id @default(autoincrement())
   totalWheels  Int       // Загальна кількість виконаних коліс
   updatedAt    DateTime  @updatedAt // Дата останнього оновлення лічильника
 }
 
+// Appointment model
 model Appointment {
   id               Int              @id @default(autoincrement())
   userId           String           // UID користувача
   licensePlate     String           // Використання licensePlate замість vehicleId
   dateTime         DateTime
+  slotCount        Int              // Скільки 15-хвилинних слотів займає запис
   type             ServiceType
   status           AppointmentStatus @default(PENDING)
   notes            String?           @db.VarChar(255)
   cancelledByAdmin Boolean?          // Позначає, чи скасовано адміністратором
   user             User              @relation(fields: [userId], references: [uid])
-  vehicle          Vehicle           @relation(fields: [licensePlate], references: [licensePlate])
 
   @@unique([userId, licensePlate, dateTime])
 }
@@ -80,13 +83,15 @@ model Appointment {
 // Enums
 enum VehicleType {
   SMALL_CAR
-  SUV
+  MEDIUM_CAR
   TRUCK
+  ONE_SLOT
+  TWO_SLOTS
 }
 
 enum ServiceType {
-  TIRE
-  REPAIR
+  TIRE_ROTATION
+  REPAIR_TIRE
 }
 
 enum AppointmentStatus {

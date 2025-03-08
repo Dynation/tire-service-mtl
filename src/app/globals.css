@@ -59,37 +59,37 @@ button:hover {
 }
 /* Remove white borders around cells */
 .fc-daygrid-day {
-  border: none !important; /* Вимикаємо зайві рамки */
-  outline: none !important;
+  border: none ; /* Вимикаємо зайві рамки */
+  outline: none;
 }
 
 /* Remove unnecessary borders in all cells */
 .fc-daygrid-day-frame {
   box-shadow: 0 4px 10px rgba(204, 162, 24, 0.699);
 
-  border: none !important;
-  outline: none !important;
+  border: none;
+  outline: none;
 }
 
 /* Remove borders between days */
 .fc-scrollgrid {
-  border: none !important;
+  border: none;
 }
 
 /* Remove borders between headers (days of the week) */
 .fc-col-header {
-  border-bottom: none !important;
+  border-bottom: none;
 }
 
 /* Clearing borders between rows */
 .fc-scrollgrid-section {
-  border: none !important;
+  border: none;
 }
 
 /* Remove unnecessary lines in the table */
 .fc-theme-standard td, 
 .fc-theme-standard th {
-  border: none !important;
+  border: none;
 }
 
 /* Additionally: setting uniform alignment */
